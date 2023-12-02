@@ -5,17 +5,59 @@ import { ChainWithAttributes } from "~~/utils/scaffold-eth";
 /**
  * Zustand Store
  *
- * You can add global state to the app using this useGlobalState, to get & set
+ * You can add global state to the app using this AppStore, to get & set
  * values from anywhere in the app.
  *
  * Think about it as a global useState.
  */
 
+type Metadata = {
+  srcUrl: string | null;
+  Level: string;
+  Power1: string;
+  Power2: string;
+  Power3: string;
+  Power4: string;
+  Alignment1: string;
+  Alignment2: string;
+  Side: string;
+  interplanetaryStatusReport: string;
+  selectedDescription: string;
+  nijiFlag: boolean;
+  vFlag: boolean;
+  equipment: string;
+  healthAndStatus: string;
+  abilities: string;
+  funFact: string;
+
+  alienMessage: string;
+};
+
+type ImageStoreState = {
+  imageUrl: string | null;
+  setImageUrl: (imageUrl: string) => void;
+};
 type GlobalState = {
   nativeCurrencyPrice: number;
   setNativeCurrencyPrice: (newNativeCurrencyPriceState: number) => void;
   targetNetwork: ChainWithAttributes;
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => void;
+  // Existing properties
+  ethPrice: number;
+  setEthPrice: (newEthPriceState: number) => void;
+
+  // New properties
+  backgroundImageUrl: string;
+  setBackgroundImageUrl: (backgroundImageUrl: string, type: string) => void;
+  displayImageUrl: string;
+  setdisplayImageUrl: (displayImageUrl: string, type: string) => void;
+  metadata: Metadata;
+  setMetadata: (metadata: Partial<Metadata>) => void;
+  travels: any[];
+  setTravels: (newTravel: any) => void;
+  apiResponses: any[];
+  errors: any[];
+  handleApiResponse: (response: any, error: any) => void;
 };
 
 export const useGlobalState = create<GlobalState>(set => ({
@@ -23,4 +65,52 @@ export const useGlobalState = create<GlobalState>(set => ({
   setNativeCurrencyPrice: (newValue: number): void => set(() => ({ nativeCurrencyPrice: newValue })),
   targetNetwork: scaffoldConfig.targetNetworks[0],
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => set(() => ({ targetNetwork: newTargetNetwork })),
+
+  ethPrice: 0,
+  setEthPrice: (newValue: number): void => set(() => ({ ethPrice: newValue })),
+
+  backgroundImageUrl: "",
+  setBackgroundImageUrl: (backgroundImageUrl: string, type: string) =>
+    set(state => (type === "background" ? { backgroundImageUrl } : state)),
+
+  displayImageUrl: "",
+  setdisplayImageUrl: (displayImageUrl: string, type: string) =>
+    set(state => (type === "character" ? { displayImageUrl } : state)),
+
+  metadata: {
+    // Initialize with default values
+    srcUrl: "",
+    Level: "",
+    Power1: "",
+    Power2: "",
+    Power3: "",
+    Power4: "",
+    Alignment1: "",
+    Alignment2: "",
+    Side: "",
+    interplanetaryStatusReport: "",
+    selectedDescription: "",
+    nijiFlag: false,
+    vFlag: false,
+    equipment: "",
+    healthAndStatus: "",
+    abilities: "",
+    funFact: "",
+    alienMessage: "",
+  },
+  setMetadata: (metadata: Partial<Metadata>) => set(state => ({ metadata: { ...state.metadata, ...metadata } })),
+  travels: [],
+  setTravels: (newTravel: any) => set(state => ({ travels: [...state.travels, newTravel] })),
+  apiResponses: [],
+  errors: [],
+  handleApiResponse: (response: any, error: any) =>
+    set(state => ({
+      apiResponses: error ? state.apiResponses : [...state.apiResponses, response],
+      errors: error ? [...state.errors, error] : state.errors,
+    })),
+}));
+
+export const useImageStore = create<ImageStoreState>(set => ({
+  imageUrl: null,
+  setImageUrl: (imageUrl: string) => set({ imageUrl }),
 }));

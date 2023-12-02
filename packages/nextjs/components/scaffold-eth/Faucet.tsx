@@ -81,14 +81,14 @@ export const Faucet = () => {
   }
 
   return (
-    <div>
+    <div className="">
       <label htmlFor="faucet-modal" className="btn btn-primary btn-sm font-normal normal-case gap-1">
         <BanknotesIcon className="h-4 w-4" />
         <span>Faucet</span>
       </label>
       <input type="checkbox" id="faucet-modal" className="modal-toggle" />
-      <label htmlFor="faucet-modal" className="modal cursor-pointer">
-        <label className="modal-box relative">
+      <label htmlFor="faucet-modal" className="modal left-1/4 top-1/4 h-1/2 w-1/2 cursor-pointer">
+        <label className="modal-box relative spaceship-display-screen">
           {/* dummy input to capture event onclick on modal box */}
           <input className="h-0 w-0 absolute top-0 left-0" />
           <h3 className="text-xl font-bold mb-3">Local Faucet</h3>

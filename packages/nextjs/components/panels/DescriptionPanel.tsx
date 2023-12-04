@@ -40,11 +40,13 @@ type Metadata = {
   selectedDescription: string;
   nijiFlag: boolean;
   vFlag: boolean;
-  equipment: string;
-  healthAndStatus: string;
-  abilities: string;
+  biometricReading: { health: number; status: string[] };
+  currentEquipmentAndVehicle: string[];
+  currentMissionBrief: string;
+  abilities: string[];
+  powerLevel: number;
   funFact: string;
-
+  currentLocation: { x: number; y: number; z: number };
   alienMessage: string;
 };
 

@@ -12,12 +12,69 @@ export type Metadata = {
   selectedDescription: string;
   nijiFlag: boolean;
   vFlag: boolean;
-  equipment: string;
-  healthAndStatus: string;
-  abilities: string;
+  biometricReading: { health: number; status: string[] };
+  currentEquipmentAndVehicle: string[];
+  currentMissionBrief: string;
+  abilities: string[];
+  powerLevel: number;
   funFact: string;
-
+  currentLocation: { x: number; y: number; z: number };
   alienMessage: string;
+};
+
+export type ApiResponses = {
+  interPLanetaryStatusReport: {
+    missionId: string;
+    heroId: string;
+    location: string;
+    description: string;
+    blockNumber: string;
+    difficulty: number;
+    experienceReward: number;
+  };
+
+  nftData: {
+    srcUrl: string | null;
+    Level: string;
+    Power1: string;
+    Power2: string;
+    Power3: string;
+    Power4: string;
+    Alignment1: string;
+    Alignment2: string;
+    Side: string;
+  };
+  metaScanData: {
+    heroId: string;
+    biometricReading: { health: number; status: string[] };
+    currentEquipmentAndVehicle: string[];
+    currentMissionBrief: string;
+    abilities: string[];
+    powerLevel: number;
+    funFact: string;
+    currentLocation: { x: number; y: number; z: number };
+    blockNumber: string;
+  };
+
+  planetData: {
+    planetId: string;
+    locationCoordinates: { x: number; y: number; z: number };
+    Scan: {
+      locationName: string;
+      enviromental_analysis: string;
+      historical_facts: string[];
+      known_entities: string[];
+      NavigationNotes: string;
+      DescriptiveText: string;
+      controlledBy: boolean | null;
+    };
+  };
+
+  chatData: {
+    messages: string[];
+    chatId: string;
+  };
+  imageData: Response;
 };
 
 export type ProgressResponseType = {

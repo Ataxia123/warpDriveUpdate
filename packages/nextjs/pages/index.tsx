@@ -10,17 +10,20 @@ import TokenSelectionPanel from "../components/panels/TokenSelectionPanel";
 import { useGlobalState as useAppStore } from "../services/store/store";
 import axios from "axios";
 import GraphemeSplitter from "grapheme-splitter";
-import type { Metadata, ProgressResponseType, Response, Sounds, StoreState } from "~~/types/appTypes";
+import type { ApiResponses, Metadata, ProgressResponseType, Response, Sounds, StoreState } from "~~/types/appTypes";
 
 export default function Home() {
   const [appState, setAppState] = useState({
     metadata: {} as Metadata,
     alienMessage: "",
     scannerOutput: {
-      equipment: "",
-      healthAndStatus: "",
-      abilities: "",
+      biometricReading: { health: 0, status: [""] },
+      currentEquipmentAndVehicle: [""],
+      currentMissionBrief: "",
+      abilities: [],
+      powerLevel: 0,
       funFact: "",
+      currentLocation: { x: 0, y: 0, z: 0 },
     },
     loading: false,
     loadingProgress: 0,
@@ -98,7 +101,7 @@ export default function Home() {
   const setTravels = useAppStore(state => state.setTravels);
   const setBackgroundImageUrl = useAppStore(state => state.setBackgroundImageUrl);
   const setDisplayImageUrl = useAppStore(state => state.setdisplayImageUrl);
-  const handleApiResponse = useAppStore(state => state.handleApiResponse);
+  const handleApiResponse = useAppStore(state => state.setApiResponses);
   const setMetadata = useAppStore(state => state.setMetadata);
   const travels = useAppStore(state => state.travels);
   const [sounds, setSounds] = useState<Sounds>({});
@@ -107,16 +110,16 @@ export default function Home() {
   const updateState = (key: string, value: any) => {
     setAppState(prevState => ({ ...prevState, [key]: value }));
   };
-  // METADATA HANDLER
-  const TNL_API_KEY = process.env.MIDJOURNEY_AUTH_TOKEN || "";
 
-  const BASE_URL = "https://api.thenextleg.io/v2";
-  const AUTH_HEADERS = {
-    Authorization: `Bearer ${TNL_API_KEY}`,
-    "Content-Type": "application/json",
-  };
-
-  const { abilities, funFact, equipment, healthAndStatus } = scannerOutput || {};
+  const {
+    biometricReading,
+    currentEquipmentAndVehicle,
+    currentMissionBrief,
+    abilities,
+    powerLevel,
+    funFact,
+    currentLocation,
+  } = scannerOutput || {};
 
   const metadata: Metadata = {
     srcUrl: srcUrl,
@@ -132,11 +135,70 @@ export default function Home() {
     selectedDescription: selectedDescription,
     nijiFlag: nijiFlag,
     vFlag: vFlag,
-    healthAndStatus: healthAndStatus,
-    abilities: abilities,
-    funFact: funFact,
-    equipment: equipment,
+    biometricReading,
+    currentEquipmentAndVehicle,
+    currentMissionBrief,
+    abilities,
+    powerLevel,
+    funFact,
+    currentLocation,
     alienMessage: alienMessage,
+  };
+
+  const apiResponses: ApiResponses = {
+    interPLanetaryStatusReport: {
+      missionId: "",
+      heroId: "",
+      location: "",
+      description: "",
+      blockNumber: "",
+      difficulty: 0,
+      experienceReward: 0,
+    },
+
+    nftData: {
+      srcUrl: metadata.srcUrl,
+      Level: metadata.Level,
+      Power1: metadata.Power1,
+      Power2: metadata.Power2,
+      Power3: metadata.Power3,
+      Power4: metadata.Power4,
+      Alignment1: metadata.Alignment1,
+      Alignment2: metadata.Alignment2,
+      Side: metadata.Side,
+    },
+    metaScanData: {
+      heroId: selectedTokenId,
+      biometricReading: metadata.biometricReading,
+      currentEquipmentAndVehicle: metadata.currentEquipmentAndVehicle,
+      currentMissionBrief: metadata.currentMissionBrief,
+      abilities: metadata.abilities,
+      powerLevel: metadata.powerLevel,
+      currentLocation: metadata.currentLocation,
+      funFact: metadata.funFact,
+      blockNumber: "",
+    },
+
+    planetData: {
+      planetId: "",
+      locationCoordinates: metadata.currentLocation,
+      Scan: {
+        locationName: "",
+        enviromental_analysis: "",
+        historical_facts: [],
+        known_entities: [],
+        NavigationNotes: "",
+        DescriptiveText: "",
+        controlledBy: null,
+      },
+    },
+
+    chatData: {
+      messages: [],
+      chatId: "",
+    },
+
+    imageData: {} as Response,
   };
 
   const loadSounds = useCallback(async () => {
@@ -204,7 +266,7 @@ export default function Home() {
   function createTravelResult(metadata: Metadata) {
     // Collect all the required information for the travel result
     setMetadata(metadata);
-    handleApiResponse(error, response);
+    handleApiResponse(response as Partial<ApiResponses>);
     setDisplayImageUrl(imageUrl, "character");
     setBackgroundImageUrl(backgroundImageUrl, "background");
     const travelResult = {
@@ -242,8 +304,7 @@ export default function Home() {
     }
     fetchScanningReport();
     setMetadata(metadata);
-    console.log("metadata Generated", metadata);
-    console.log("SCANNING RESULT SENT TO BACKEND", { scannerOutput });
+    console.log("SCANNING RESULT SENT TO BACKEND", { scannerOutput, metadata });
     updateState("scannerOutput", scannerOutput);
   }
 
@@ -260,6 +321,7 @@ export default function Home() {
         alienMessage: alienMessage,
       });
       console.log("interplanetaryStatusReport", response.data.report);
+
       updateState("interplanetaryStatusReport", response.data.report);
     } catch (error) {
       console.error("Error fetching interplanetary status report:", error);
@@ -342,8 +404,8 @@ export default function Home() {
         metadata: metadata,
       });
       console.log("modified prompt gpt", metadata);
-      updateState("scannerOutput", response.data.scannerOutput);
-      console.log("scannerOutput", response.data.scannerOutput);
+      updateState("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
+      console.log("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
     } catch (error) {
       console.error("Error fetching scanning report:", error);
     }
@@ -395,11 +457,13 @@ export default function Home() {
     nijiFlag: boolean,
     vFlag: boolean,
     side: string | "",
-    abilities: string | "",
-    funFact: string | "",
-    equipment: string | "",
-    healthAndStatus: string | "",
+    currentEquipmentAndVehicle: string[] | null,
+    currentMissionBrief: string | null,
+    abilities: string[] | null,
+    powerLevel: number | null,
+    funFact: string | null,
     alienMessage: string | "",
+    biometricReading?: { health: number; status: string[] } | null,
   ): string {
     const niji = nijiFlag ? "--niji 5" : "";
     const v = vFlag ? "--v 5" : "";
@@ -409,7 +473,7 @@ export default function Home() {
     if (type === "background")
       return `${randomPlanet} ${keyword} ${alienMessage} ${niji} ${v} viewed from space`.trim();
 
-    return `${srcUrl}  ${keyword} ${healthAndStatus} ${level} ${power1} ${power2} ${power3} ${power4} ${healthAndStatus} ${equipment} ${abilities} ${funFact} ${alignment1} ${alignment2} ${side} ${selectedDescription} ${niji} ${v}`.trim();
+    return `${srcUrl}  ${keyword}  ${level} ${power1} ${power2} ${power3} ${power4} ${currentMissionBrief} Power Level: ${powerLevel}${biometricReading?.health} ${currentEquipmentAndVehicle} ${abilities} ${funFact} ${alignment1} ${alignment2} ${side} ${selectedDescription} ${niji} ${v}`.trim();
   }
 
   const handleDescribeClick = async () => {
@@ -428,8 +492,8 @@ export default function Home() {
     const url = scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl;
     console.log("url", url);
     try {
-      const response = await axios("/api/postDescription", {
-        url,
+      const response = await axios.post("/api/postDescription", {
+        url: url,
       });
 
       // Remove the first grapheme (emoji) from each string in the description array
@@ -503,11 +567,13 @@ export default function Home() {
       nijiFlag,
       vFlag,
       side,
-      scannerOutput.abilities,
-      scannerOutput.equipment,
-      scannerOutput.funFact,
-      scannerOutput.healthAndStatus,
+      currentEquipmentAndVehicle,
+      currentMissionBrief,
+      abilities,
+      powerLevel,
+      funFact,
       alienMessage,
+      biometricReading,
     );
 
     if (waitingForWebhook) {

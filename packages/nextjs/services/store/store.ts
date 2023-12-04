@@ -1,5 +1,6 @@
 import create from "zustand";
 import scaffoldConfig from "~~/scaffold.config";
+import type { ApiResponses, Metadata, Response } from "~~/types/appTypes";
 import { ChainWithAttributes } from "~~/utils/scaffold-eth";
 
 /**
@@ -10,28 +11,6 @@ import { ChainWithAttributes } from "~~/utils/scaffold-eth";
  *
  * Think about it as a global useState.
  */
-
-type Metadata = {
-  srcUrl: string | null;
-  Level: string;
-  Power1: string;
-  Power2: string;
-  Power3: string;
-  Power4: string;
-  Alignment1: string;
-  Alignment2: string;
-  Side: string;
-  interplanetaryStatusReport: string;
-  selectedDescription: string;
-  nijiFlag: boolean;
-  vFlag: boolean;
-  equipment: string;
-  healthAndStatus: string;
-  abilities: string;
-  funFact: string;
-
-  alienMessage: string;
-};
 
 type ImageStoreState = {
   imageUrl: string | null;
@@ -53,13 +32,15 @@ type GlobalState = {
   setdisplayImageUrl: (displayImageUrl: string, type: string) => void;
   metadata: Metadata;
   setMetadata: (metadata: Partial<Metadata>) => void;
-  travels: any[];
+  travels: ApiResponses[];
   setTravels: (newTravel: any) => void;
-  apiResponses: any[];
-  errors: any[];
-  handleApiResponse: (response: any, error: any) => void;
+  apiResponses: ApiResponses;
+  setApiResponses: (response: Partial<ApiResponses>) => void;
 };
-
+export const useImageStore = create<ImageStoreState>(set => ({
+  imageUrl: null,
+  setImageUrl: (imageUrl: string) => set({ imageUrl }),
+}));
 export const useGlobalState = create<GlobalState>(set => ({
   nativeCurrencyPrice: 0,
   setNativeCurrencyPrice: (newValue: number): void => set(() => ({ nativeCurrencyPrice: newValue })),
@@ -92,25 +73,73 @@ export const useGlobalState = create<GlobalState>(set => ({
     selectedDescription: "",
     nijiFlag: false,
     vFlag: false,
-    equipment: "",
-    healthAndStatus: "",
-    abilities: "",
+    biometricReading: { health: 0, status: [""] },
+    currentEquipmentAndVehicle: [""],
+    currentMissionBrief: "",
+    abilities: [],
+    powerLevel: 0,
     funFact: "",
+    currentLocation: { x: 0, y: 0, z: 0 },
     alienMessage: "",
   },
   setMetadata: (metadata: Partial<Metadata>) => set(state => ({ metadata: { ...state.metadata, ...metadata } })),
   travels: [],
   setTravels: (newTravel: any) => set(state => ({ travels: [...state.travels, newTravel] })),
-  apiResponses: [],
-  errors: [],
-  handleApiResponse: (response: any, error: any) =>
-    set(state => ({
-      apiResponses: error ? state.apiResponses : [...state.apiResponses, response],
-      errors: error ? [...state.errors, error] : state.errors,
-    })),
-}));
+  apiResponses: {
+    interPLanetaryStatusReport: {
+      missionId: "",
+      heroId: "",
+      location: "",
+      description: "",
+      blockNumber: "",
+      difficulty: 0,
+      experienceReward: 0,
+    },
 
-export const useImageStore = create<ImageStoreState>(set => ({
-  imageUrl: null,
-  setImageUrl: (imageUrl: string) => set({ imageUrl }),
+    nftData: {
+      srcUrl: null,
+      Level: "",
+      Power1: "",
+      Power2: "",
+      Power3: "",
+      Power4: "",
+      Alignment1: "",
+      Alignment2: "",
+      Side: "",
+    },
+    metaScanData: {
+      heroId: "",
+      biometricReading: { health: 0, status: [""] },
+      currentEquipmentAndVehicle: [""],
+      currentMissionBrief: "",
+      abilities: [],
+      powerLevel: 0,
+      funFact: "",
+      currentLocation: { x: 0, y: 0, z: 0 },
+      blockNumber: "",
+    },
+
+    planetData: {
+      planetId: "",
+      locationCoordinates: { x: 0, y: 0, z: 0 },
+      Scan: {
+        locationName: "",
+        enviromental_analysis: "",
+        historical_facts: [],
+        known_entities: [],
+        NavigationNotes: "",
+        DescriptiveText: "",
+        controlledBy: null,
+      },
+    },
+
+    chatData: {
+      messages: [],
+      chatId: "",
+    },
+
+    imageData: {} as Response,
+  },
+  setApiResponses: (response: Partial<ApiResponses>) =>
+    set(state => ({ apiResponses: { ...state.apiResponses, ...response } })),
 }));

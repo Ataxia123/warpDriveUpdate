@@ -6,9 +6,11 @@ interface TokenSelectionPanelProps {
   warping: boolean;
   parsedMetadata: Metadata;
   scannerOutput: {
-    abilities: string;
-    equipment: string;
-    healthAndStatus: string;
+    biometricReading: { health: number; status: string[] };
+    currentEquipmentAndVehicle: string[];
+    currentMissionBrief: string;
+    abilities: string[];
+    powerLevel: number;
     funFact: string;
   };
   playSpaceshipOn: () => void;

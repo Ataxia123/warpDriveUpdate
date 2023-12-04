@@ -15,8 +15,7 @@ interface SwitchboardProps {
   onToggle: (attribute: string, isEnabled: boolean) => void;
   generatePrompt: (
     type: "character" | "background",
-
-    srcUrl: string,
+    srcUrl: string | null,
     level: string,
     power1: string,
     power2: string,
@@ -28,12 +27,13 @@ interface SwitchboardProps {
     nijiFlag: boolean,
     vFlag: boolean,
     side: string | "",
-    interplanetaryStatusReport: string | "",
-    abilities: string | "",
-    funFact: string | "",
-    equipment: string | "",
-    healthAndStatus: string | "",
+    currentEquipmentAndVehicle: string[] | null,
+    currentMissionBrief: string | null,
+    abilities: string[] | null,
+    powerLevel: number | null,
+    funFact: string | null,
     alienMessage: string | "",
+    biometricReading?: { health: number; status: string[] } | null,
   ) => string;
 
   promptData: Metadata;
@@ -95,9 +95,9 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
       interplanetaryStatusReport,
       abilities,
       funFact,
-
-      equipment,
-      healthAndStatus,
+      currentEquipmentAndVehicle,
+      currentMissionBrief,
+      powerLevel,
       alienMessage,
     } = promptData;
 
@@ -115,17 +115,17 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
       interplanetaryStatusReport,
       abilities,
       funFact,
-      equipment,
-
-      healthAndStatus,
+      currentEquipmentAndVehicle,
+      currentMissionBrief,
+      powerLevel,
       alienMessage,
     };
-    const filteredData: Partial<typeof selectedData> = {};
+    const filteredData: Partial<Metadata> = {};
 
     checkedAttributes.forEach(attr => {
       const key = attr as keyof typeof selectedData;
       if (selectedData.hasOwnProperty(key)) {
-        filteredData[key] = selectedData[key];
+        //filteredData[key] = selectedData[key];
       }
     });
 
@@ -145,11 +145,16 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
       nijiFlag,
       vFlag,
       filteredData.Side || "",
-      filteredData.interplanetaryStatusReport || "", // Pass the interplanetary status report here
-      filteredData.abilities || "", // Pass the abilities here
+
+      filteredData.currentEquipmentAndVehicle || [], // Pass the equipment here,
+
+      filteredData.currentMissionBrief || "", // Pass the mission brief here
+
+      filteredData.abilities || [], // Pass the abilities here
+
+      filteredData.powerLevel || 0, // Pass the power level here
       filteredData.funFact || "", // Pass the fun fact here
-      filteredData.equipment || "", // Pass the equipment here
-      filteredData.healthAndStatus || "", // Pass the health and status here
+
       filteredData.alienMessage || "", // Pass the alien message here
     );
 
@@ -320,9 +325,7 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
                             generateModifiedPrompt();
                             handleToggle(attribute);
                           }}
-                        >
-                          <span className="">{displayName}</span>
-                        </div>
+                        ></div>
                       );
                     })}
                   </div>

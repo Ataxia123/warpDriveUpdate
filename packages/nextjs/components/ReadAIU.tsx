@@ -1,4 +1,6 @@
-import { FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useCallback, useEffect, useState } from "react";
+import IntergalacticReportDisplay from "./IntergalacticReportDisplay";
+import MetadataDisplay from "./MetadataDisplay";
 import { ethers } from "ethers";
 import { useAccount, useContractEvent, useContractRead, usePublicClient } from "wagmi";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
@@ -26,7 +28,7 @@ interface ReadAIUProps {
   setTravelStatus: (type: "NoTarget" | "AcquiringTarget" | "TargetAcquired") => void;
   handleEngaged: (engaged: boolean) => void;
   onSelectedTokenIdRecieved: (selectedTokenId: string) => void;
-  onMetadataReceived: (metadata: any) => void;
+  onMetadataReceived: (metadata: Metadata) => void;
   onImageSrcReceived: (imageSrc: string) => void;
   onTokenIdsReceived: (tokenIds: string[]) => void;
   isFocused: boolean; // Add this prop
@@ -65,7 +67,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
   onToggleMinimize, // Destructure the onToggleMinimize prop
 }) => {
   const { address } = useAccount();
-  const { data: deployedContract } = useDeployedContractInfo("WarpDrive");
+
   const [tokenIds, setTokenIds] = useState<string[] | undefined>([]);
   const [balance, setBalance] = useState<bigint>(BigInt(0));
   const [selectedTokenId, setSelectedTokenId] = useState<string>();
@@ -76,12 +78,8 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
   const [mouseTrigger, setMouseTrigger] = useState<boolean>(false);
   const [engaged, setEngaged] = useState<boolean>(false);
   const [scanOutputIndex, setScanOutputIndex] = useState<number>(0);
-  const [scannerOptions, setScannerOptions] = useState<string[]>([
-    "abilities",
-    "healthAndStatus",
-    "equipment",
-    "funFact",
-  ]);
+  const scannerOptions = ["abilities", "currentEquipmentAndVehicle", "funFact", "powerLevel", "currentMissionBrief"];
+  const { data: deployedContract } = useDeployedContractInfo("WarpDrive");
 
   const { data: transferEvents } = useScaffoldEventHistory({
     contractName: "WarpDrive",
@@ -92,7 +90,12 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
 
   const fetchUserBalance = async (address: string, contract: any) => {
     if (!address || !contract) return BigInt(0);
-    return await contract.balanceOf(address);
+    try {
+      return await contract.balanceOf(address);
+    } catch (error) {
+      console.error("Error fetching user balance:", error);
+      return BigInt(0);
+    }
   };
 
   const fetchOwnedTokenIds = (transferEvents: any[] | undefined) => {
@@ -100,20 +103,15 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
     return transferEvents.map(event => event.args.tokenId.toString());
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     playHolographicDisplay();
-    if (scanOutputIndex > 0) {
-      setScanOutputIndex(scanOutputIndex - 1);
-    }
-  };
+    setScanOutputIndex(prevIndex => Math.max(prevIndex - 1, 0));
+  }, [playHolographicDisplay]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     playHolographicDisplay();
-    console.log("im clicked");
-    if (scanOutputIndex < scannerOptions.length - 1) {
-      setScanOutputIndex(scanOutputIndex + 1);
-    }
-  };
+    setScanOutputIndex(prevIndex => Math.max(prevIndex + 1, 0));
+  }, [playHolographicDisplay]);
 
   const updateAppState = (userBalance: bigint, ownedTokenIds: string[]) => {
     setBalance(userBalance);
@@ -128,50 +126,65 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
     setSelectedTokenId("");
   };
 
+  // Outside of the component
+  const createEthersContract = () => {
+    return deployedContract ? new ethers.Contract(deployedContract.address, deployedContract.abi, provider) : null;
+  };
+
+  // Inside your component
   useEffect(() => {
     const fetchTokenIds = async () => {
-      if (!address || !deployedContract || !tokenIds) {
+      if (!address || !deployedContract) {
         resetAppState();
         return;
       }
 
-      const contract = new ethers.Contract(deployedContract.address, deployedContract.abi, provider);
-      const userBalance = await fetchUserBalance(address, contract);
-      const ownedTokenIds = fetchOwnedTokenIds(transferEvents);
+      const contractInstance = createEthersContract();
+      if (!contractInstance) return;
 
-      if (userBalance >= BigInt(0)) {
-        updateAppState(userBalance, ownedTokenIds);
-      } else {
+      try {
+        const userBalance = await fetchUserBalance(address, contractInstance);
+        const ownedTokenIds = fetchOwnedTokenIds(transferEvents);
+
+        userBalance >= BigInt(0) ? updateAppState(userBalance, ownedTokenIds) : resetAppState();
+      } catch (error) {
+        console.error("Error in fetchTokenIds:", error);
         resetAppState();
       }
     };
 
     fetchTokenIds();
-  }, [address, mouseTrigger, transferEvents]);
+  }, [address, deployedContract, transferEvents]);
 
   useEffect(() => {
     const fetchTokenURI = async () => {
-      if (address && deployedContract && selectedTokenId) {
-        const contract = new ethers.Contract(deployedContract.address, deployedContract.abi, provider);
-        const uri = await contract.tokenURI(selectedTokenId);
+      if (!address || !deployedContract || !selectedTokenId) return;
+
+      try {
+        const contractInstance = createEthersContract();
+        if (!contractInstance) return;
+
+        const uri = await contractInstance.tokenURI(selectedTokenId);
         setTokenURI(uri);
+      } catch (error) {
+        console.error("Error fetching token URI:", error);
       }
     };
 
     fetchTokenURI();
-  }, [address, deployedContract, selectedTokenId]);
+  }, [address, selectedTokenId]);
 
   useEffect(() => {
     const fetchMetadata = async () => {
-      if (tokenURI) {
-        try {
-          const response = await fetch(tokenURI);
-          const json = await response.json();
-          setMetadata(json);
-          onMetadataReceived(json); // Add this line
-        } catch (error) {
-          console.error("Error fetching metadata:", error);
-        }
+      if (!tokenURI) return;
+
+      try {
+        const response = await fetch(tokenURI);
+        const json = await response.json();
+        setMetadata(json);
+        onMetadataReceived(json);
+      } catch (error) {
+        console.error("Error fetching metadata:", error);
       }
     };
 
@@ -319,33 +332,39 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
 
   return (
     <>
-      {" "}
-      <div className="fixed top-16 w-60 h-32 scale-75 z-[15000000000000000000000000000000000000000000000000000000000000000]"></div>
       {
-        <div onMouseEnter={() => setMouseTrigger(true)} className="toggle-minimize-button spaceship-display-screen">
+        <div
+          onMouseEnter={() => setMouseTrigger(true)}
+          className="toggle-minimize-button spaceship-display-screen 
+                    opacity-100
+                    "
+        >
           <div onMouseEnter={onToggleMinimize} onMouseLeave={onToggleMinimize} className="spaceship-display-screen">
-            <div className="screen-border text-black bg-black opacity-80">
+            <div className="screen-border h-full text-black bg-black">
               {selectedTokenId && travelStatus == "NoTarget" ? (
                 <div
-                  className="description-text hex-prompt font-bold text-[1rem] absolute top-[20%] h-[30%] w-full p-[0.1rem] mt-[-2rem] text-white"
+                  className="description-text hex-prompt font-bold text-[1rem] 
+                                    absolute top-[10%] h-[40%] w-full p-[0.1rem] mt-[-2rem] text-white"
                   onClick={() => handleButton()}
                 >
-                  |N.A.V.| COMPUTER
-                  <br />
-                  READY
+                  ENGAGE WARP DRIVE <br />
                 </div>
               ) : (
                 travelStatus == "AcquiringTarget" && (
                   <div
-                    className="description-text hex-prompt font-bold text-[1rem] absolute top-[20%] h-[30%] w-full p-[0.1rem] mt-[-2rem] text-white"
+                    className="description-text hex-prompt font-bold text-[1rem] 
+                                            absolute top-[20%] h-[30%] w-full p-[0.1rem] mt-[-2rem] text-white"
                     onClick={() => handleButton()}
                   >
-                    ENGAGE WARP DRIVE{" "}
+                    READY
                   </div>
                 )
               )}
               {!selectedTokenId && (
-                <div className="display-text hex-prompt font-bold text-[1rem] absolute top-[11%] h-[20%] w-full p-[0.1rem] mt-[-2rem]">
+                <div
+                  className="description-text hex-prompt font-bold text-[1rem] 
+                                    absolute top-[20%] h-[30%] w-full  mt-[-2rem] text-white"
+                >
                   SELECT ID
                 </div>
               )}
@@ -354,11 +373,16 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
                 id="tokenId"
                 value={selectedTokenId}
                 onChange={handleTokenIdChange}
-                className="dropdown-container hex-prompt dropdown-option text-green content-center top-[70%] left-[11%]"
+                className="dropdown-container hex-prompt dropdown-option text-green content-center pl-1 top-[70%]"
               >
-                <option value="hex-prompt dropdown-option">-ID-</option>
+                <option value="dropdown-option bg-color-black">-ID-</option>
                 {tokenIds?.map(tokenId => (
-                  <option key={tokenId} value={tokenId}>
+                  <option
+                    key={tokenId}
+                    value={tokenId}
+                    className="dropdown-option hex-prompt 
+                                        dropdown-option  content-center"
+                  >
                     {tokenId}
                   </option>
                 ))}
@@ -375,9 +399,12 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
           {buttonMessageId !== "" && travelStatus !== "NoTarget" ? <AvailableButtons /> : <div></div>}
         </div>
       }
-      <div className="toggle-minimize-button spaceship-display-screen text-black bg-black opacity-80 pointer-events-none"></div>
+      <div
+        className="toggle-minimize-button spaceship-display-screen
+                text-black bg-black opacity-20 pointer-events-none"
+      ></div>
       <img
-        className="absolute h-[25%] w-[19%] top-[18.4%] left-[40.96%] opacity-25 hover:opacity-80 z-[1000000]"
+        className="absolute h-[8.9%] w-[5.5%] top-[59.4%] left-[47.6%] opacity-25 hover:opacity-80 z-[1000000] cursor-pointer"
         src="/aiu.png"
         onClick={() => {
           setEngaged(!engaged);
@@ -385,133 +412,33 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
       ></img>
       <div className={`spaceship-display-screen token-selection-panel${!isMinimized && engaged ? "-focused" : ""}`}>
         <div className="text-black relative opacity-100 h-full w-full overflow-hidden">
-          <div className="absolute z-[1000000000000000] text-[.91rem] p-[.3rem] pb-[0.1rem] pl-[0.8rem] font-bold left-[5%] top-[19%] w-[22.5%] h-[40.5%]">
-            <li className="p-[1.4rem] pl-[4.2rem] mb-[1rem] mt-[-1rem] ml-[2.1rem] font-[Orbitron] text-[.70rem]">
-              {metadata?.name} METADATA
-            </li>
-            <ul className="absolute p-[1.5rem] pt-[-0.001rem] pl-[2.8rem] w-[120%] top-[25%] left-[-12.5%] scale-90">
-              <br /> Type:
-              <span className="text-white font-bold pl-[0.8rem]">{parsedMetadata?.Level}</span>
-              <br />
-              Power1:
-              <span className="text-white font-bold pl-[0.8rem]">{parsedMetadata?.Power1}</span>
-              <br />
-              Power2:
-              <span className="text-white font-bold pl-[0.8rem]">{parsedMetadata?.Power2}</span>
-              <br />
-              Power3:
-              <span className="text-white font-bold pl-[0.8rem]">{parsedMetadata?.Power3}</span>
-              <br />
-              Side:
-              <span className="text-white font-bold pl-[0.1rem]">{parsedMetadata?.Side}</span>
-              <br />
-              Alignment:
-              <br />
-              <span className="text-white font-bold pl-[1.5rem]">
-                {parsedMetadata?.Alignment1} {parsedMetadata?.Alignment2}
-              </span>
-            </ul>
-          </div>{" "}
-          <div className="spaceship-display-screen absolute h-[40%] w-full top-[20%] left-0 flex flex-row">
-            <div className="spaceship-display-screen relative bottom-[-60%] top-[-3%] left-[29%] h-full w-[70%] flex pt-[11rem] pr-[4rem] mr-0 ml-[-1rem] pointer-events-auto">
-              <div className="text-white p-[1.2rem] z-[10000000000000000000] absolute font-bold text-[1rem] h-[82%] top-[20%] w-[73.8%] left-[-2%]">
-                INTERPLANETARY STATUS REPORT
-                <div className="spaceship-display-screen text-black pl-[3.1rem] z-[10000000000000000000] relative font-bold text-[1.1rem] h-[95%] overflow-x-hidden overflow-y-scroll">
-                  <div>
-                    {engaged === false ? (
-                      <> #---ENGAGE to ANALYZE---#</>
-                    ) : (
-                      <>
-                        {selectedTokenId === "" ? (
-                          <> #SELECT TOKEN to DECODE#</>
-                        ) : (
-                          <>
-                            {travelStatus === "NoTarget" ? (
-                              <> #ENABLE N.A.V. COMPUTER#</>
-                            ) : (
-                              <>
-                                {interplanetaryStatusReport === "" ? (
-                                  <>
-                                    |------ENGAGE SCANNER------|
-                                    <br />
-                                    |----------TO OBTAIN-----------|
-                                    <br />| -INTERPLANETARY REPORT-|
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="spaceship-display-screen relative ml-[-5%] left-[17%] bottom-[-10%]">
-                                      <br />
-                                      TRANSMISSION FROM:
-                                      <br />
-                                      <br />
-                                      {parsedMetadata?.Level} {parsedMetadata?.Power1} {parsedMetadata?.Power2}
-                                    </span>
-                                    <br />
-                                    <span className="spaceship-display-screen description-text relative top-[2.5rem] ml-[-5%] left-[-7%] mr-[10rem] animate-none text-white">
-                                      {parsedMetadata.interplanetaryStatusReport}
-                                    </span>
-                                  </>
-                                )}
-                              </>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                    <br />
-                    <br />
-                    <br />
-                  </div>
+          <MetadataDisplay
+            parsedMetadata={parsedMetadata}
+            scannerOutput={scannerOutput}
+            scannerOptions={scannerOptions}
+          />
+          <IntergalacticReportDisplay
+            engaged={engaged}
+            selectedTokenId={selectedTokenId ? selectedTokenId : ""}
+            travelStatus={travelStatus}
+            interplanetaryStatusReport={interplanetaryStatusReport}
+            parsedMetadata={parsedMetadata}
+          />
+          {/*
+    
 
-                  <p className="prompt-data relative text-[0.8rem] font-normal text-white justify-center items-center flex flex-col top-[0.3rem] p-[1rem] left-[-10.2%] h-full w-[110%] pointer-events-auto">
-                    {" "}
-                  </p>
-                  {scannerOutput?.funFact ? (
-                    <span className="spaceship-display-screen relative top-[1rem] left-[-0.3rem] w-[110%] h-[110%] pl-0 pr-[.8rem] text-[0.7rem] font-bold text-white pt-0">
-                      <br /> FUN FACT: <br />
-                      <br />
-                      {scannerOutput.funFact}
-                    </span>
-                  ) : (
-                    <span className="spaceship-display-screen absolute ml-[26%] w-[40%] mr-[22%] h-0 top-0 pl-[1.2rem] mb-[20%] text-[0.8rem] font-normal">
-                      ENGAGE N.A.V. COMPUTER TO DECODE DATA
-                      <br />
-                    </span>
-                  )}
-                  <br />
-                </div>
-              </div>
-            </div>
-            <div className="hex-data z-[-11111]">
-              <div className="spaceship-display-screen absolute top-[17%] left-[68.2%] h-[85%] w-[35%] flex flex-col justify-center items-center pointer-events-auto">
-                <div className="hex-prompt display-border mt-[7%] ml-[-1rem] p-[1rem] pr-[3.2rem] h-[90%] w-[90%] text-[0.8rem] pointer-events-auto overflow-y-scroll">
-                  <span className="spaceship-display-screen absolute top-[1.5rem] w-[60%] left-[1.4rem] text-[0.85rem] pointer-events-auto h-[18%] leading-[0.8rem]">
-                    SCANNER OUTPUT: <br />
-                    {scanOutputIndex + 1}/{scannerOptions.length}
-                    <br />
-                  </span>
-                  <div className="absolute top-[15%] text-[0.9rem] pointer-events-auto spaceship-display-screen  w-[85%] pt-[.5rem] pl-0 pr-0 left-0 leading-[0.8rem]  h-[66%] flex p-[0.5rem] overflow-y-scroll flex-col text-white">
-                    <button onClick={() => handlePrevious()}> {`<<`} </button> ||
-                    <button
-                      onClick={() => {
-                        handleNext();
-                        console.log("I'm Clicked");
-                      }}
-                    >{`>>`}</button>
-                  </div>
-                  <span className="hex-prompt relative">{scannerOptions[scanOutputIndex]}:</span>
-                  <br />
-                  <span className="hex-prompt relative top-[0.7rem]">
-                    {scannerOutput[scannerOptions[scanOutputIndex]]}
-                  </span>
-                </div>{" "}
-              </div>
-            </div>
-            {stringToHex(metadata ? metadata.description : "No Metadata")}
-          </div>
+      <ScannerOutput 
+        scanOutputIndex={scanOutputIndex} 
+        scannerOptions={scannerOptions} 
+        scannerOutput={scannerOutput} 
+        handlePrevious={handlePrevious} 
+        handleNext={handleNext}
+      />
+  ... [rest of your main component logic, like image display] ... */}
           {imageSrc && (
             <img
-              className="rounded-full absolute h-[70%] w-[28%] top-[-45%] left-[37%] border-[12px] border-black z-[10000100]"
+              className="rounded-full absolute h-[70%] w-[28%] 
+                            top-[0%] left-[37%] border-[12px] border-black z-[10000100]"
               src={imageSrc}
             />
           )}

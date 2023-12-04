@@ -3,6 +3,7 @@ import cache from "../../services/cache";
 import axios from "axios";
 import type { NextApiRequest, NextApiResponse } from "next";
 
+const BASE_URL = "https://api.thenextleg.io/v2";
 const AUTH_TOKEN = process.env.MIDJOURNEY_AUTH_TOKEN;
 const endpoint = `https://api.thenextleg.io/v2/`;
 const AUTH_HEADERS = {
@@ -53,13 +54,11 @@ const fetchToCompletion: any = async (messageId: string, retryCount: number, max
   return fetchToCompletion(messageId, retryCount + 1);
 };
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { url } = req.body;
-  console.log("imageUrl", url);
-  const data = JSON.stringify({
-    url: url,
-    ref: "",
-    webhookOverride: "",
-  });
+  const { url } = await req.body;
+
+  console.log(url);
+
+  console.log("|======DEBUGGING=======|", url, JSON.stringify(req.body));
 
   const config = {
     method: "post",
@@ -68,8 +67,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       Authorization: "Bearer " + AUTH_TOKEN,
       "Content-Type": "application/json",
     },
-    data: data,
+    data: { url: url },
   };
+
   try {
     axios(config)
       .then(async function (response: any) {

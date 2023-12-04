@@ -74,10 +74,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
     backgroundImageUrl,
     displayImageUrl,
     setMetadata,
-    travels,
     setTravels,
-    apiResponses,
-    errors,
+    apiResponses: travels,
     handleApiResponse,
   } = useGlobalState(state => ({
     backgroundImageUrl: state.backgroundImageUrl,
@@ -86,76 +84,76 @@ const LogViewer: React.FC<LogViewerProps> = ({
     travels: state.travels,
     setTravels: state.setTravels,
     apiResponses: state.apiResponses,
-    errors: state.errors,
-    handleApiResponse: state.handleApiResponse,
+    handleApiResponse: state.setApiResponses,
   }));
   // Custom hook for managing app store data
   // Custom hook for managing app store data
   const { imageUrl, handlePrevious, handleNext, setCurrentTravelSection, currentSection, currentTravelIndex } =
     useAppStoreData();
-  const imageSrc =
-    currentTravelIndex === -1 && travels[currentTravelIndex].imageUrl
-      ? travels[currentTravelIndex].imageUrl
-      : testImage;
-  const displayContent = () => {
-    const travel = travels[currentTravelIndex];
+  /*
+    const imageSrc =
+        currentTravelIndex === -1 && travels[currentTravelIndex].imageUrl
+            ? travels[currentTravelIndex].imageUrl
+            : testImage;
+    const displayContent = () => {
+        const travel = travels[currentTravelIndex];
 
-    switch (currentSection) {
-      case 1:
-        return travels.length > 0 ? (
-          <div>
-            <h3>
-              Metadata: for {travel.metadata.Level}
-              {travel.metadata.Power1}
-              {travel.metadata.Power2}
-            </h3>
-            <br />
-            <ul>
-              <li>Src URL: {travel.metadata.srcUrl}</li>
-              <li>Level: {travel.metadata.Level}</li>
-              <li>Power1: {travel.metadata.Power1}</li>
-              <li>Power2: {travel.metadata.Power2}</li>
-              <li>Power3: {travel.metadata.Power3}</li>
-              <li>Power4: {travel.metadata.Power4}</li>
-              <li>Alignment1: {travel.metadata.Alignment1}</li>
-              <li>Alignment2: {travel.metadata.Alignment2}</li>
-              <li>Side: {travel.metadata.Side}</li>
-              <li>Interplanetary Status Report: {travel.metadata.interplanetaryStatusReport}</li>
-              <li>Selected Description: {travel.metadata.selectedDescription}</li>
-            </ul>
-          </div>
-        ) : null;
+        switch (currentSection) {
+            case 1:
+                return travels.length > 0 ? (
+                    <div>
+                        <h3>
+                            Metadata: for {travel.metadata.Level}
+                            {travel.metadata.Power1}
+                            {travel.metadata.Power2}
+                        </h3>
+                        <br />
+                        <ul>
+                            <li>Src URL: {travel.metadata.srcUrl}</li>
+                            <li>Level: {travel.metadata.Level}</li>
+                            <li>Power1: {travel.metadata.Power1}</li>
+                            <li>Power2: {travel.metadata.Power2}</li>
+                            <li>Power3: {travel.metadata.Power3}</li>
+                            <li>Power4: {travel.metadata.Power4}</li>
+                            <li>Alignment1: {travel.metadata.Alignment1}</li>
+                            <li>Alignment2: {travel.metadata.Alignment2}</li>
+                            <li>Side: {travel.metadata.Side}</li>
+                            <li>Interplanetary Status Report: {travel.metadata.interplanetaryStatusReport}</li>
+                            <li>Selected Description: {travel.metadata.selectedDescription}</li>
+                        </ul>
+                    </div>
+                ) : null;
 
-      case 2:
-        return (
-          <div>
-            <h3>
-              CONNECTED WITH :<br />
-              {metadata.Level} {metadata.Power1} {metadata.Power2}:
-            </h3>
-            <ChatWithCaptain metadata={metadata} />
-          </div>
-        );
-      case 3:
-        const imageSrc =
-          currentTravelIndex === -1 && imageUrl ? imageUrl : travels.length > 0 ? travel.imageUrl : testImage;
-        return (
-          <img
-            style={{
-              marginLeft: "35%",
-              display: "fit",
-              width: "30%",
-              height: "10%",
-            }}
-            src={imageSrc}
-            alt="Image"
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
+            case 2:
+                return (
+                    <div>
+                        <h3>
+                            CONNECTED WITH :<br />
+                            {metadata.Level} {metadata.Power1} {metadata.Power2}:
+                        </h3>
+                        <ChatWithCaptain metadata={metadata} />
+                    </div>
+                );
+            case 3:
+                const imageSrc =
+                    currentTravelIndex === -1 && imageUrl ? imageUrl : travels.length > 0 ? travel.imageUrl : testImage;
+                return (
+                    <img
+                        style={{
+                            marginLeft: "35%",
+                            display: "fit",
+                            width: "30%",
+                            height: "10%",
+                        }}
+                        src={imageSrc}
+                        alt="Image"
+                    />
+                );
+            default:
+                return null;
+        }
+    };
+*/
   const handleSetActiveState = (imageUrl: string, selectedDescription: string, interplanetaryStatusReport: string) => {
     handleActiveState(imageUrl, selectedDescription, interplanetaryStatusReport);
     playHolographicDisplay();
@@ -178,16 +176,15 @@ const LogViewer: React.FC<LogViewerProps> = ({
     linkElement.setAttribute("download", exportFileDefaultName);
     linkElement.click();
   };
-
-  function stringifyMetadata(): string {
-    const { Level, Power1, Power2, Power3, Power4, Alignment1, Alignment2, Side } =
-      travels[currentTravelIndex].metadata;
-    const selectedDescription = travels[currentTravelIndex].metadata.interplanetaryStatusReport;
-    return `"REPORT FROM\n ${Level} ${Power1} ${Power2} ${Power3 !== undefined ? Power3 : "||||||||| |||||||||"} ${
-      Power4 !== undefined ? Power4 : "|||| ||||| |||| |||||"
-    } ||||||||| STATUS REPORT|||||||||||:\n ${selectedDescription} METADATA Alignment1: ${Alignment1}; Alignment2: ${Alignment2}; Side: ${Side};`;
-  }
-
+  /*
+        function stringifyMetadata(): string {
+            const { Level, Power1, Power2, Power3, Power4, Alignment1, Alignment2, Side } =
+                travels[currentTravelIndex].metadata;
+            const selectedDescription = travels[currentTravelIndex].metadata.interplanetaryStatusReport;
+            return `"REPORT FROM\n ${Level} ${Power1} ${Power2} ${Power3 !== undefined ? Power3 : "||||||||| |||||||||"} ${Power4 !== undefined ? Power4 : "|||| ||||| |||| |||||"
+                } ||||||||| STATUS REPORT|||||||||||:\n ${selectedDescription} METADATA Alignment1: ${Alignment1}; Alignment2: ${Alignment2}; Side: ${Side};`;
+        }
+    */
   async function createWebcomic(testImageUrl: string, reportFrameUrl: string, metadata: string, extraImage: string) {
     return new Promise((resolve, reject) => {
       const canvas: fabric.Canvas = new fabric.Canvas(null, {
@@ -327,14 +324,14 @@ const LogViewer: React.FC<LogViewerProps> = ({
       });
     });
   }
-
-  async function handleSendTweet() {
-    playHolographicDisplay();
-    const formattedMetadata = stringifyMetadata();
-    const collageUrl = (await createWebcomic(testImage, reportFrame, formattedMetadata, imageSrc)) as string;
-    setCollageUrl(collageUrl);
-  }
-
+  /*
+        async function handleSendTweet() {
+            playHolographicDisplay();
+            const formattedMetadata = stringifyMetadata();
+            const collageUrl = (await createWebcomic(testImage, reportFrame, formattedMetadata, imageSrc)) as string;
+            setCollageUrl(collageUrl);
+        }
+    */
   async function handleReallySendTweet(selectedLog: string, selectedImage: string) {
     playHolographicDisplay();
     // Host the collage image on your server or a third-party service and get its URL
@@ -361,8 +358,8 @@ const LogViewer: React.FC<LogViewerProps> = ({
           <button onClick={() => setCurrentTravelSection(3)}>IMAGES</button>||
         </span>
       </div>
-      <div>{displayContent()}</div>
-      {currentTravelIndex + 1}/{travels.length}
+      <div>{}</div>
+      {/* {currentTravelIndex + 1}/{travels.length}*/}
       <br />
       <div
         style={{
@@ -376,79 +373,79 @@ const LogViewer: React.FC<LogViewerProps> = ({
         ||- <button onClick={handlePrevious}>Previous</button>-||-
         <button onClick={handleNext}>Next</button>-||
       </div>
-      {travels.length > 0 && (
-        <div className="spaceship-screen-display" style={{}}>
-          ||-{" "}
-          <button
-            onClick={e => {
-              playHolographicDisplay();
-              handleSetActiveState(
-                travels[currentTravelIndex].imageUrl,
-                travels[currentTravelIndex].metadata.interplanetaryStatusReport,
-                scanningResults[currentTravelIndex] === undefined ? "" : scanningResults[currentTravelIndex].join(", "),
-              );
-            }}
-          >
-            Set Active
-          </button>
-          -||-
-          <button onClick={handleExportLogs}>Export Logs</button>-||
-          <br />
-          <button
-            style={{
-              fontWeight: "bold",
-              marginTop: "1rem",
-              marginLeft: "-3%",
-              color: "green",
-            }}
-            onClick={e => {
-              handleSendTweet();
-            }}
-          >
-            <img
-              className="screen-border"
-              style={{
-                left: "5 %",
-                position: "relative",
-                bottom: "10%",
-                padding: "0rem",
-                width: "100%",
-                height: "100%",
-              }}
-              src={collageUrl ? collageUrl : "/aiu.png"}
-            ></img>
-            ||-Generate InterPlanetary Report-||
-          </button>
-          <button
-            style={{
-              fontWeight: "bold",
-              marginTop: "1rem",
-              marginLeft: "-3%",
-              color: "rgb(29, 161, 242)",
-            }}
-            onClick={e => {
-              handleReallySendTweet(
-                travels[currentTravelIndex].metadata.interplanetaryStatusReport,
-                travels[currentTravelIndex].imageUrl,
-              );
-            }}
-          >
-            <img
-              className="screen-border"
-              style={{
-                left: "5 %",
-                position: "relative",
-                bottom: "10%",
-                padding: "0rem",
-                width: "100%",
-                height: "100%",
-              }}
-              src={imageSrc ?? "https://i.imgur.com/2ZlQW1b.png"}
-            ></img>
-            ||-Send Tweet-||
-          </button>
-        </div>
-      )}
+      {/*travels.length > 0 && (
+                <div className="spaceship-screen-display" style={{}}>
+                    ||-{" "}
+                    <button
+                        onClick={e => {
+                            playHolographicDisplay();
+                            handleSetActiveState(
+                                travels[currentTravelIndex].imageUrl,
+                                travels[currentTravelIndex].metadata.interplanetaryStatusReport,
+                                scanningResults[currentTravelIndex] === undefined ? "" : scanningResults[currentTravelIndex].join(", "),
+                            );
+                        }}
+                    >
+                        Set Active
+                    </button>
+                    -||-
+                    <button onClick={handleExportLogs}>Export Logs</button>-||
+                    <br />
+                    <button
+                        style={{
+                            fontWeight: "bold",
+                            marginTop: "1rem",
+                            marginLeft: "-3%",
+                            color: "green",
+                        }}
+                        onClick={e => {
+                            handleSendTweet();
+                        }}
+                    >
+                        <img
+                            className="screen-border"
+                            style={{
+                                left: "5 %",
+                                position: "relative",
+                                bottom: "10%",
+                                padding: "0rem",
+                                width: "100%",
+                                height: "100%",
+                            }}
+                            src={collageUrl ? collageUrl : "/aiu.png"}
+                        ></img>
+                        ||-Generate InterPlanetary Report-||
+                    </button>
+                    <button
+                        style={{
+                            fontWeight: "bold",
+                            marginTop: "1rem",
+                            marginLeft: "-3%",
+                            color: "rgb(29, 161, 242)",
+                        }}
+                        onClick={e => {
+                            handleReallySendTweet(
+                                //travels[currentTravelIndex].metadata.interplanetaryStatusReport,
+                                //travels[currentTravelIndex].imageUrl,
+                            );
+                        }}
+                    >
+                        <img
+                            className="screen-border"
+                            style={{
+                                left: "5 %",
+                                position: "relative",
+                                bottom: "10%",
+                                padding: "0rem",
+                                width: "100%",
+                                height: "100%",
+                            }}
+                            src={imageSrc ?? "https://i.imgur.com/2ZlQW1b.png"}
+                        ></img>
+                        ||-Send Tweet-||
+                    </button>
+                </div>
+            )*/}
     </div>
   );
 };

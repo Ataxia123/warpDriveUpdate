@@ -23,8 +23,7 @@ interface PromptPanelProps {
   //Type '(type: "character" | "background", srcURL: string | undefined, level: string, power1: string, power2: string, power3: string, power4: string, alignment1: string, alignment2: string, selectedDescription: string, nijiFlag: boolean, vFlag: boolean, side: string) => string' is not assignable to type '() => void'.
   generatePrompt: (
     type: "character" | "background",
-
-    srcUrl: string,
+    srcUrl: string | null,
     level: string,
     power1: string,
     power2: string,
@@ -36,12 +35,13 @@ interface PromptPanelProps {
     nijiFlag: boolean,
     vFlag: boolean,
     side: string | "",
-    interplanetaryStatusReport: string | "",
-    abilities: string | "",
-    funFact: string | "",
-    equipment: string | "",
-    healthAndStatus: string | "",
+    currentEquipmentAndVehicle: string[] | null,
+    currentMissionBrief: string | null,
+    abilities: string[] | null,
+    powerLevel: number | null,
+    funFact: string | null,
     alienMessage: string | "",
+    biometricReading?: { health: number; status: string[] } | null,
   ) => string;
 }
 
@@ -70,14 +70,15 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
     "Power4",
     "Alignment1",
     "Alignment2",
-    "Side",
-    "abilities",
-    "funFact",
-    "equipment",
-    "healthAndStatus",
-    "alienMessage",
-    "interplanetaryStatusReport",
     "selectedDescription",
+    "Side",
+    "interplanetaryStatusReport",
+    "currentEquipmentAndVehicle",
+    "currentMissionBrief",
+    "abilities",
+    "powerLevel",
+    "funFact",
+    "alienMessage",
   ];
   const [isFocused, setIsFocused] = useState(false);
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);

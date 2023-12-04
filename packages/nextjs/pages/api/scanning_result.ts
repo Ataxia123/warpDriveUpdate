@@ -14,12 +14,15 @@ async function generateScannerOutput(metadata: Metadata) {
             of the Alliance of the Infinite Universe:
             ${metadata.Level}${" "}${metadata.Power1} 
             ${" "}${metadata.Power2}${" "}${metadata.Power3}. 
-            Generate scanner output based on the metadata available for the character in the following format:
+            Generate scanner output JSON object based on the metadata available for the character in the following format:
             { 
-            Biometric Reading: {health_condition}; 
-            Current Equipment and Vehicle: {equipment}; 
-            Abilities and Power level: {abilities_level}; 
-            Fun Fact: {fun_fact}
+            biometricReading: { health: number, status: string[] };
+            currentEquipmentAndVehicle: string[];
+            currentMissionBrief: string;
+            abilities: string[];
+            powerLevel: number;
+            funFact: string;
+            currentLocation: { x: number, y: number, z: number };
             }"`,
     },
     {
@@ -49,21 +52,12 @@ async function generateScannerOutput(metadata: Metadata) {
   const stream = await openai.chat.completions.create({
     model: "gpt-4-1106-preview",
     messages: messages,
+    response_format: { type: "json_object" },
   });
 
   const rawOutput = stream.choices[0].message.content;
-  const healthAndStatusMatch = rawOutput?.match(/(?:Biometric Reading: *)([^;\n]+)/i);
-  const equipmentMatch = rawOutput?.match(/(?:Current Equipment and Vehicle: *)([^;\n]+)/i);
-  const abilitiesMatch = rawOutput?.match(/(?:Abilities and Power level: *)([^;\n]+)/i);
-  const funFactMatch = rawOutput?.match(/(?:Fun Fact: *)([^;\n]+)/i);
 
   return {
-    healthAndStatus: healthAndStatusMatch
-      ? healthAndStatusMatch[1].trim()
-      : "Health and status information is unavailable.",
-    equipment: equipmentMatch ? equipmentMatch[1].trim() : "Equipment information is unavailable.",
-    abilities: abilitiesMatch ? abilitiesMatch[1].trim() : "Abilities information is unavailable.",
-    funFact: funFactMatch ? funFactMatch[1].trim() : "Fun fact information is unavailable.",
     rawOutput,
   };
 }

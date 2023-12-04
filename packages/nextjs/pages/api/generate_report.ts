@@ -16,9 +16,11 @@ async function generateInterplanetaryStatusReport(metadata: Metadata, alienMessa
         through the targetting computer of a ship in the Alliance. you are in the midst 
         of your latest assignment and are sending a status report asking for assistance.
         Interpret the current Situation Scan 
-        ${JSON.stringify(metadata.healthAndStatus)}
+        ${JSON.stringify(metadata.biometricReading)}
         ${JSON.stringify(metadata.abilities)}
-        ${JSON.stringify(metadata.equipment)}
+        ${JSON.stringify(metadata.currentEquipmentAndVehicle)}
+        ${JSON.stringify(metadata.currentLocation)}
+        ${JSON.stringify(metadata.currentMissionBrief)}
         ${JSON.stringify(metadata.funFact)} and produce incoming Interplanetary Mission Report in JSON format. 
         The mission report's objective is to set the context and introduce the characters for this mission.
         The mission report must include the following information:

@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
-import type { Metadata } from "~~/types/appTypes";
+import type { NftData } from "~~/types/appTypes";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_AUTH_TOKEN,
 });
 
-async function generateScannerOutput(metadata: Metadata) {
+async function generateScannerOutput(metadata: NftData) {
   const messages: any[] = [
     {
       role: "system",

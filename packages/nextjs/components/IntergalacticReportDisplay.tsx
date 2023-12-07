@@ -1,42 +1,65 @@
-import type { Metadata } from "~~/types/appTypes";
+import Image from "next/image";
+import { useGlobalState } from "~~/services/store/store";
+import type { ApiResponses } from "~~/types/appTypes";
 
 const InterGalaReportDisplay = (props: {
-  parsedMetadata: Metadata;
+  metadata: ApiResponses;
   engaged: boolean;
   selectedTokenId: string;
   travelStatus: string;
-  interplanetaryStatusReport: any;
+  setEngaged: (engaged: boolean) => void;
 }) => {
   // ... [your state and function definitions] ...
-  const { parsedMetadata, engaged, selectedTokenId, travelStatus, interplanetaryStatusReport } = props;
-
+  const { metadata, engaged, selectedTokenId, setEngaged, travelStatus } = props;
+  const parsedMetadata = metadata?.nftData ? metadata.nftData : null;
+  const account = useGlobalState(state => state.account);
   return (
     <div
-      className="absolute top-1/4 -mt-20 mr-10 right-0
-                p-12 h-1/4 w-2/6"
+      className="spaceship-display-screen absolute  text-center left-1/2 -ml-[4.8%] p-1 w-1/2 bottom-1/3 -mb-[2.1%]"
+      style={{
+        width: "10%",
+        height: "12%",
+      }}
     >
-      <span className="text-yellow-600 text-lg">SHIP STATUS</span>
-      <br />
+      <img
+        className="absolute p-10 opacity-25 hover:opacity-40 cursor-pointer -translate-y-6"
+        src="/aiu.png"
+        onClick={() => {
+          setEngaged(!engaged);
+        }}
+      />
+      ||--AI-U--|| <br />
+      <span className="text-green-600 text-xs"> SIGNAL FOUND:</span>
       {selectedTokenId === "" ? (
-        <> #SELECT TOKEN to DECODE#</>
+        <>
+          WELCOME COMMANDER
+          <br />
+          <span className="text-2xl text-white">{account?.displayName}</span>
+        </>
       ) : (
         <>
           {travelStatus === "NoTarget" ? (
-            <> #OFFLINE#</>
+            <>
+              <span className="text-yellow-600 text-lg">
+                {" "}
+                SIGNAL_ID <br />
+                <span className="text-2xl text-white">#AIU{selectedTokenId}</span>
+              </span>
+            </>
           ) : (
             <>
-              <span className="text-green-600 text-sm"> SYSTEMS READY</span>
+              <span className="text-green-600 text-sm">READY FOR HYPERSPACE</span>
             </>
           )}
         </>
       )}
-      {interplanetaryStatusReport === "" ? (
+      {!parsedMetadata ? (
         <></>
       ) : (
         <>
           <span
-            className="spaceship-display-screen text-center text-2xl scale-50 
-                            screen-border relative mt-32 p-2 cursor-pointer hover:text-green-500"
+            className="spaceship-display-screen text-center text-2xl scale-y-50 
+                            screen-border relative mt-6 ml-1 cursor-pointer hover:text-green-500"
           >
             <br />
             TRANSMISSION FROM:

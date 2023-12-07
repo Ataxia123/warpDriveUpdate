@@ -1,6 +1,15 @@
 import create from "zustand";
 import scaffoldConfig from "~~/scaffold.config";
-import type { ApiResponses, Metadata, Response } from "~~/types/appTypes";
+import type {
+  ApiResponses,
+  ChatData,
+  InterPlanetaryStatusReport,
+  MetaScanData,
+  MidjourneyConfig,
+  NftData,
+  PlanetData,
+  Response,
+} from "~~/types/appTypes";
 import { ChainWithAttributes } from "~~/utils/scaffold-eth";
 
 /**
@@ -13,10 +22,20 @@ import { ChainWithAttributes } from "~~/utils/scaffold-eth";
  */
 
 type ImageStoreState = {
-  imageUrl: string | null;
+  imageUrl: string;
   setImageUrl: (imageUrl: string) => void;
+  backgroundImageUrl: string;
+  setBackgroundImageUrl: (backgroundImageUrl: string) => void;
+  displayImageUrl: string;
+  setdisplayImageUrl: (displayImageUrl: string) => void;
+  srcUrl: string;
+  setSrcUrl: (srcUrl: string) => void;
+
+  resetImages: () => void;
 };
 type GlobalState = {
+  tokenIds: string[];
+  setTokenIds: (tokenIds: string[]) => void;
   nativeCurrencyPrice: number;
   setNativeCurrencyPrice: (newNativeCurrencyPriceState: number) => void;
   targetNetwork: ChainWithAttributes;
@@ -24,122 +43,74 @@ type GlobalState = {
   // Existing properties
   ethPrice: number;
   setEthPrice: (newEthPriceState: number) => void;
-
-  // New properties
-  backgroundImageUrl: string;
-  setBackgroundImageUrl: (backgroundImageUrl: string, type: string) => void;
-  displayImageUrl: string;
-  setdisplayImageUrl: (displayImageUrl: string, type: string) => void;
-  metadata: Metadata;
-  setMetadata: (metadata: Partial<Metadata>) => void;
-  travels: ApiResponses[];
+  nftData: NftData;
+  setNftData: (newNftData: NftData) => void;
+  metaScanData: MetaScanData;
+  setMetaScanData: (newMetaScanData: MetaScanData) => void;
+  setPlanetData: (newNftData: PlanetData) => void;
+  planetData: PlanetData;
+  interPlanetaryStatusReport: InterPlanetaryStatusReport;
+  setInterPlanetaryStatusReport: (newInterPlanetaryStatusReport: InterPlanetaryStatusReport) => void;
+  midjourneyConfig: MidjourneyConfig;
+  setMidjourneyConfig: (newMidjourneyConfig: Partial<MidjourneyConfig>) => void;
+  travels: Partial<ApiResponses>[];
   setTravels: (newTravel: any) => void;
   apiResponses: ApiResponses;
   setApiResponses: (response: Partial<ApiResponses>) => void;
+  reset: () => void;
+  account: any;
+  setAccount: (account: any) => void;
 };
 export const useImageStore = create<ImageStoreState>(set => ({
-  imageUrl: null,
+  imageUrl: "",
   setImageUrl: (imageUrl: string) => set({ imageUrl }),
+  backgroundImageUrl: "",
+  setBackgroundImageUrl: (backgroundImageUrl: string) => set({ backgroundImageUrl }),
+  displayImageUrl: "",
+  setdisplayImageUrl: (displayImageUrl: string) => set({ displayImageUrl }),
+  srcUrl: "",
+  setSrcUrl: (srcUrl: string) => set({ srcUrl }),
+  resetImages: () => set({ imageUrl: "", backgroundImageUrl: "", displayImageUrl: "", srcUrl: "" }),
 }));
 export const useGlobalState = create<GlobalState>(set => ({
+  account: {},
+  setAccount: (account: any) => set(() => ({ account })),
+  tokenIds: [],
+  setTokenIds: (tokenIds: string[]): void => set(() => ({ tokenIds })),
   nativeCurrencyPrice: 0,
   setNativeCurrencyPrice: (newValue: number): void => set(() => ({ nativeCurrencyPrice: newValue })),
   targetNetwork: scaffoldConfig.targetNetworks[0],
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => set(() => ({ targetNetwork: newTargetNetwork })),
-
+  nftData: {} as NftData,
+  setNftData: (nftData: NftData) => set(state => ({ nftData: { ...state.nftData, ...nftData } })),
+  metaScanData: {} as MetaScanData,
+  setMetaScanData: (metaScanData: MetaScanData) =>
+    set(state => ({ metaScanData: { ...state.metaScanData, ...metaScanData } })),
+  planetData: {} as PlanetData,
+  setPlanetData: (planetData: PlanetData) => set(state => ({ planetData: { ...state.planetData, ...planetData } })),
+  interPlanetaryStatusReport: {} as InterPlanetaryStatusReport,
+  setInterPlanetaryStatusReport: (interPlanetaryStatusReport: InterPlanetaryStatusReport) =>
+    set(state => ({
+      interPlanetaryStatusReport: { ...state.interPlanetaryStatusReport, ...interPlanetaryStatusReport },
+    })),
+  midjourneyConfig: {} as MidjourneyConfig,
+  setMidjourneyConfig: (midjourneyConfig: Partial<MidjourneyConfig>) =>
+    set(state => ({ midjourneyConfig: { ...state.midjourneyConfig, ...midjourneyConfig } })),
   ethPrice: 0,
   setEthPrice: (newValue: number): void => set(() => ({ ethPrice: newValue })),
 
-  backgroundImageUrl: "",
-  setBackgroundImageUrl: (backgroundImageUrl: string, type: string) =>
-    set(state => (type === "background" ? { backgroundImageUrl } : state)),
-
-  displayImageUrl: "",
-  setdisplayImageUrl: (displayImageUrl: string, type: string) =>
-    set(state => (type === "character" ? { displayImageUrl } : state)),
-
-  metadata: {
-    // Initialize with default values
-    srcUrl: "",
-    Level: "",
-    Power1: "",
-    Power2: "",
-    Power3: "",
-    Power4: "",
-    Alignment1: "",
-    Alignment2: "",
-    Side: "",
-    interplanetaryStatusReport: "",
-    selectedDescription: "",
-    nijiFlag: false,
-    vFlag: false,
-    biometricReading: { health: 0, status: [""] },
-    currentEquipmentAndVehicle: [""],
-    currentMissionBrief: "",
-    abilities: [],
-    powerLevel: 0,
-    funFact: "",
-    currentLocation: { x: 0, y: 0, z: 0 },
-    alienMessage: "",
-  },
-  setMetadata: (metadata: Partial<Metadata>) => set(state => ({ metadata: { ...state.metadata, ...metadata } })),
   travels: [],
-  setTravels: (newTravel: any) => set(state => ({ travels: [...state.travels, newTravel] })),
-  apiResponses: {
-    interPLanetaryStatusReport: {
-      missionId: "",
-      heroId: "",
-      location: "",
-      description: "",
-      blockNumber: "",
-      difficulty: 0,
-      experienceReward: 0,
-    },
-
-    nftData: {
-      srcUrl: null,
-      Level: "",
-      Power1: "",
-      Power2: "",
-      Power3: "",
-      Power4: "",
-      Alignment1: "",
-      Alignment2: "",
-      Side: "",
-    },
-    metaScanData: {
-      heroId: "",
-      biometricReading: { health: 0, status: [""] },
-      currentEquipmentAndVehicle: [""],
-      currentMissionBrief: "",
-      abilities: [],
-      powerLevel: 0,
-      funFact: "",
-      currentLocation: { x: 0, y: 0, z: 0 },
-      blockNumber: "",
-    },
-
-    planetData: {
-      planetId: "",
-      locationCoordinates: { x: 0, y: 0, z: 0 },
-      Scan: {
-        locationName: "",
-        enviromental_analysis: "",
-        historical_facts: [],
-        known_entities: [],
-        NavigationNotes: "",
-        DescriptiveText: "",
-        controlledBy: null,
-      },
-    },
-
-    chatData: {
-      messages: [],
-      chatId: "",
-    },
-
-    imageData: {} as Response,
-  },
+  setTravels: (newTravel: Partial<ApiResponses>) => set(state => ({ travels: [...state.travels, newTravel] })),
+  apiResponses: {} as ApiResponses,
   setApiResponses: (response: Partial<ApiResponses>) =>
     set(state => ({ apiResponses: { ...state.apiResponses, ...response } })),
+  reset: () =>
+    set({
+      apiResponses: {} as ApiResponses,
+      midjourneyConfig: {} as MidjourneyConfig,
+      interPlanetaryStatusReport: {} as InterPlanetaryStatusReport,
+      planetData: {} as PlanetData,
+      metaScanData: {} as MetaScanData,
+      nftData: {} as NftData,
+    }),
 }));

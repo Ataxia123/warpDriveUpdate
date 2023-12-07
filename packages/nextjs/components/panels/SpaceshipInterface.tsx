@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
+import { ToastBar, Toaster, toast } from "react-hot-toast";
 
 interface SpaceshipInterfaceProps {
   travelStatus: string;
 }
 
 const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus }) => {
-  const [videoPlaying, setVideoPlaying] = useState(false);
-  const videoId = "MVPTGNGiI-4";
+  const [videoPlaying, setVideoPlaying] = useState(true);
+  const videoId = "8Yqx3we3WJ4";
   const playerRef = useRef<YT.Player | null>(null);
 
   const toggleVideo = () => {
@@ -82,7 +83,7 @@ const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus })
   }, []);
   return (
     <>
-      <div style={divStyle} className="spaceship-display-screen" onClick={toggleVideo}>
+      <div style={divStyle} className="spaceship-display-screen">
         <iframe
           className={`screen-border spaceship-interface ${videoPlaying ? "video-playing" : ""}`}
           style={{
@@ -92,6 +93,55 @@ const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus })
           src={iframeSrc}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         ></iframe>
+        <div
+          className="spaceship-interface"
+          style={{
+            background: "transparent",
+            zIndex: -2,
+
+            transform:
+              "perspective(1000px) rotateZ(20deg) rotateX(40deg) rotateY(-20deg) translateX(-5%) skewX(-10deg) translateY(25%) scale(1.5)",
+          }}
+        >
+          <Toaster
+            containerClassName=""
+            containerStyle={{
+              top: 20,
+              left: 30,
+              bottom: 20,
+              right: 20,
+            }}
+            toastOptions={{
+              className: "spaceship-display-screen",
+
+              success: {
+                duration: 8000,
+                style: {
+                  background: "#1f2937",
+                  color: "#fff",
+                  padding: 5,
+                },
+                iconTheme: {
+                  primary: "orange",
+                  secondary: "black",
+                },
+              },
+            }}
+            position="bottom-center"
+          >
+            {t => (
+              <ToastBar toast={t}>
+                {({ icon, message }) => (
+                  <>
+                    {icon}
+                    {message}
+                    {t.type !== "loading" && <button onClick={() => toast.dismiss(t.id)}>X</button>}
+                  </>
+                )}
+              </ToastBar>
+            )}
+          </Toaster>
+        </div>
       </div>
       <div
         className="screen-border spaceship-pannel spaceship-display-screen"

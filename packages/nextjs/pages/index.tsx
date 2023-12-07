@@ -7,51 +7,44 @@ import DescriptionPanel from "../components/panels/DescriptionPanel";
 import PromptPanel from "../components/panels/PromptPanel";
 import SpaceshipInterface from "../components/panels/SpaceshipInterface";
 import TokenSelectionPanel from "../components/panels/TokenSelectionPanel";
-import { useGlobalState as useAppStore } from "../services/store/store";
+import { useGlobalState as useAppStore, useImageStore } from "../services/store/store";
 import axios from "axios";
+import { ethers } from "ethers";
 import GraphemeSplitter from "grapheme-splitter";
-import type { ApiResponses, Metadata, ProgressResponseType, Response, Sounds, StoreState } from "~~/types/appTypes";
+import { toast } from "react-hot-toast";
+import { useAccount, useContractEvent, useContractRead, usePublicClient } from "wagmi";
+import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
+import { useScaffoldEventHistory } from "~~/hooks/scaffold-eth/useScaffoldEventHistory";
+import type {
+  ApiResponses,
+  ChatData,
+  InterPlanetaryStatusReport,
+  MetaScanData,
+  MidjourneyConfig,
+  NftData,
+  PlanetData,
+  ProgressResponseType,
+  Response,
+  Sounds,
+  StoreState,
+} from "~~/types/appTypes";
+import { generatePrompt } from "~~/utils/nerdUtils";
+import { useEthersProvider } from "~~/utils/wagmi-utils";
 
 export default function Home() {
   const [appState, setAppState] = useState({
-    metadata: {} as Metadata,
-    alienMessage: "",
-    scannerOutput: {
-      biometricReading: { health: 0, status: [""] },
-      currentEquipmentAndVehicle: [""],
-      currentMissionBrief: "",
-      abilities: [],
-      powerLevel: 0,
-      funFact: "",
-      currentLocation: { x: 0, y: 0, z: 0 },
-    },
     loading: false,
     loadingProgress: 0,
     originatingMessageId: "",
     error: "",
-    response: {} as Response,
-    imageUrl: "",
     waitingForWebhook: false,
     description: [],
     selectedDescriptionIndex: 0,
     selectedTokenId: "",
-    srcUrl: "",
-    level: "",
-    power1: "",
-    power2: "",
-    power3: "",
-    power4: "",
-    alignment1: "",
-    alignment2: "",
-    side: "",
     buttonMessageId: "",
     backgroundImageUrl: "assets/background.png",
-    tempUrl: "",
-    nijiFlag: false,
-    vFlag: false,
     travelStatus: "NoTarget",
     prevTravelStatus: "",
-    interplanetaryStatusReport: "",
     selectedDescription: "",
     modifiedPrompt: "ALLIANCE OF THE INFINITE UNIVERSE",
     warping: false,
@@ -60,34 +53,16 @@ export default function Home() {
     AfterExtraText: "",
   });
   const {
-    alienMessage,
-    scannerOutput,
     loadingProgress,
     loading,
     prevTravelStatus,
     error,
-    response,
-    imageUrl,
     waitingForWebhook,
     description,
-    selectedDescriptionIndex,
     selectedTokenId,
-    srcUrl,
-    level,
-    power1,
-    power2,
-    power3,
-    power4,
-    alignment1,
-    alignment2,
-    side,
     buttonMessageId,
     backgroundImageUrl,
-    nijiFlag,
-    vFlag,
     travelStatus,
-    interplanetaryStatusReport,
-    selectedDescription,
     modifiedPrompt,
     warping,
     scanning,
@@ -98,109 +73,199 @@ export default function Home() {
     scanningResults: [],
     imagesStored: [],
   });
+
+  const { address } = useAccount();
+  const { data: transferEvents } = useScaffoldEventHistory({
+    contractName: "WarpDrive",
+    eventName: "Transfer",
+    fromBlock: BigInt(15795907), // Set an appropriate starting block number
+    filters: { to: address },
+  });
+
+  // Outside of the component
+
+  const { data: deployedContract } = useDeployedContractInfo("WarpDrive");
+
+  const provider = useEthersProvider();
+  const createEthersContract = () => {
+    return deployedContract ? new ethers.Contract(deployedContract.address, deployedContract.abi, provider) : null;
+  };
+  const contractInstance = createEthersContract();
+
+  const imgStore = useImageStore(state => state);
+  const {
+    setSrcUrl,
+    setImageUrl,
+    imageUrl,
+    setBackgroundImageUrl,
+    setdisplayImageUrl: setDisplayImageUrl,
+    resetImages,
+  } = imgStore;
+
+  const tokenIds = useAppStore(state => state.tokenIds);
+  const reset = useAppStore(state => state.reset);
   const setTravels = useAppStore(state => state.setTravels);
-  const setBackgroundImageUrl = useAppStore(state => state.setBackgroundImageUrl);
-  const setDisplayImageUrl = useAppStore(state => state.setdisplayImageUrl);
-  const handleApiResponse = useAppStore(state => state.setApiResponses);
-  const setMetadata = useAppStore(state => state.setMetadata);
+  const setMetadata = useAppStore(state => state.setApiResponses);
+  const setNftData = useAppStore(state => state.setNftData);
+  const setPlanetData = useAppStore(state => state.setPlanetData);
+  const setMetaScanData = useAppStore(state => state.setMetaScanData);
+  const setTokenIds = useAppStore(state => state.setTokenIds);
+  const setInterplanetaryStatusReport = useAppStore(state => state.setInterPlanetaryStatusReport);
+  const midjourneyConfig = useAppStore(state => state.midjourneyConfig);
+  const metaScanData = useAppStore(state => state.metaScanData);
+  const interplanetaryStatusReport = useAppStore(state => state.interPlanetaryStatusReport);
+  const planetData = useAppStore(state => state.planetData);
+  const nftData = useAppStore(state => state.nftData);
+  const setMidJourneyConfig = useAppStore(state => state.setMidjourneyConfig);
   const travels = useAppStore(state => state.travels);
   const [sounds, setSounds] = useState<Sounds>({});
   const [audioController, setAudioController] = useState<AudioController | null>(null);
   const [soundsLoaded, setSoundsLoaded] = useState<boolean>(false);
+
+  const [balance, setBalance] = useState<bigint>(BigInt(0));
+  const [tokenURI, setTokenURI] = useState<string>();
   const updateState = (key: string, value: any) => {
     setAppState(prevState => ({ ...prevState, [key]: value }));
   };
 
-  const {
-    biometricReading,
-    currentEquipmentAndVehicle,
-    currentMissionBrief,
-    abilities,
-    powerLevel,
-    funFact,
-    currentLocation,
-  } = scannerOutput || {};
-
-  const metadata: Metadata = {
-    srcUrl: srcUrl,
-    Level: level,
-    Power1: power1,
-    Power2: power2,
-    Power3: power3,
-    Power4: power4,
-    Alignment1: alignment1,
-    Alignment2: alignment2,
-    Side: side,
-    interplanetaryStatusReport: interplanetaryStatusReport,
-    selectedDescription: selectedDescription,
-    nijiFlag: nijiFlag,
-    vFlag: vFlag,
-    biometricReading,
-    currentEquipmentAndVehicle,
-    currentMissionBrief,
-    abilities,
-    powerLevel,
-    funFact,
-    currentLocation,
-    alienMessage: alienMessage,
+  const fetchUserBalance = async (address: string, contract: any) => {
+    if (!address || !contract) return BigInt(0);
+    try {
+      return await contract.balanceOf(address);
+    } catch (error) {
+      console.error("Error fetching user balance:", error);
+      return BigInt(0);
+    }
   };
 
-  const apiResponses: ApiResponses = {
-    interPLanetaryStatusReport: {
-      missionId: "",
-      heroId: "",
-      location: "",
-      description: "",
-      blockNumber: "",
-      difficulty: 0,
-      experienceReward: 0,
-    },
+  const fetchOwnedTokenIds = (transferEvents: any[] | undefined) => {
+    if (!transferEvents || !address) return [];
+    return transferEvents.map(event => event.args.tokenId.toString());
+  };
 
-    nftData: {
-      srcUrl: metadata.srcUrl,
-      Level: metadata.Level,
-      Power1: metadata.Power1,
-      Power2: metadata.Power2,
-      Power3: metadata.Power3,
-      Power4: metadata.Power4,
-      Alignment1: metadata.Alignment1,
-      Alignment2: metadata.Alignment2,
-      Side: metadata.Side,
-    },
-    metaScanData: {
-      heroId: selectedTokenId,
-      biometricReading: metadata.biometricReading,
-      currentEquipmentAndVehicle: metadata.currentEquipmentAndVehicle,
-      currentMissionBrief: metadata.currentMissionBrief,
-      abilities: metadata.abilities,
-      powerLevel: metadata.powerLevel,
-      currentLocation: metadata.currentLocation,
-      funFact: metadata.funFact,
-      blockNumber: "",
-    },
+  const updateAppState = (userBalance: bigint, ownedTokenIds: string[]) => {
+    setBalance(userBalance);
+    setTokenIds(ownedTokenIds);
+  };
 
-    planetData: {
-      planetId: "",
-      locationCoordinates: metadata.currentLocation,
-      Scan: {
-        locationName: "",
-        enviromental_analysis: "",
-        historical_facts: [],
-        known_entities: [],
-        NavigationNotes: "",
-        DescriptiveText: "",
-        controlledBy: null,
-      },
-    },
+  const resetAppState = () => {
+    reset();
+    resetImages();
+  };
+  const fetchMetadata = async () => {
+    if (!tokenURI) return;
 
-    chatData: {
-      messages: [],
-      chatId: "",
-    },
+    try {
+      const response = await fetch(tokenURI);
+      const json = await response.json();
 
+      console.log("NFT DATA", json);
+      handleMetadataReceived(json);
+    } catch (error) {
+      console.error("Error fetching metadata:", error);
+    }
+  };
+
+  const fetchTokenURI = async () => {
+    if (!address || !deployedContract || !selectedTokenId) return;
+    resetAppState();
+    try {
+      if (!contractInstance) return;
+
+      const uri = await contractInstance.tokenURI(selectedTokenId);
+      setTokenURI(uri);
+      console.log(uri);
+    } catch (error) {
+      console.error("Error fetching token URI:", error);
+    }
+  };
+
+  const fetchTokenIds = async () => {
+    if (!address || !deployedContract) {
+      console.log("No address or deployed contract");
+      resetAppState();
+      return;
+    }
+    if (!contractInstance) return;
+
+    try {
+      const userBalance = await fetchUserBalance(address, contractInstance);
+      const ownedTokenIds = fetchOwnedTokenIds(transferEvents);
+
+      userBalance >= BigInt(0) ? updateAppState(userBalance, ownedTokenIds) : resetAppState();
+      console.log("tokenIds", ownedTokenIds, "userBalance", userBalance);
+    } catch (error) {
+      console.error("Error in fetchTokenIds:", error);
+      resetAppState();
+    }
+  };
+
+  const handleMetadataReceived = (metadata: any) => {
+    console.log("Metadata received in the parent component:", metadata);
+    // Extract the attributes from the metadata
+    const attributes = metadata.attributes.reduce((acc: any, attr: any) => {
+      acc[attr.trait_type] = attr.value;
+      return acc;
+    }, {});
+    const ipfsGateway = "https://ipfs.io"; // Choose a gateway
+    const imageUrl = metadata.image?.replace("ipfs://", `${ipfsGateway}/ipfs/`);
+
+    const nftQuery = {
+      Level: attributes.Level,
+      Power1: attributes["Power 1"],
+      Power2: attributes["Power 2"],
+      Power3: attributes["Power 3"],
+      Power4: attributes["Power 4"],
+      Alignment1: attributes["Alignment 1"],
+      Alignment2: attributes["Alignment 2"],
+      Side: attributes.Side,
+    };
+    setNftData(nftQuery);
+    generateMetadata(nftQuery);
+    toast.success(`
+                INCOMING TRANSMISSION\n
+            Established connection with:\n
+            ${nftQuery.Level} ${nftQuery.Power1} ${nftQuery.Power2}\n
+            Agent #${selectedTokenId} of the A.I.U.
+           `);
+  };
+
+  useEffect(() => {
+    fetchMetadata();
+  }, [tokenURI]);
+  useEffect(() => {
+    fetchTokenURI();
+  }, [address, selectedTokenId]);
+  // Inside your component
+  useEffect(() => {
+    fetchTokenIds();
+  }, [address, deployedContract, transferEvents]);
+
+  useEffect(() => {
+    updateState("prevTravelStatus", travelStatus);
+    console.log("prevTravelStatus", prevTravelStatus);
+    if (travelStatus === "NoTarget" && prevTravelStatus === "TargetAcquired") {
+      // setTravels: (newTravel: any) => set(state => ({ travels: [...state.travels, newTravel] })),
+      createTravelResult();
+      console.log("GENERATED TRAVEL OUTPUT:", travels[1]);
+    }
+  }, [travelStatus]);
+
+  const bMessageId = buttonMessageId;
+
+  const { url: srcUrl, nijiFlag, selectedDescription, vFlag } = midjourneyConfig || {};
+
+  const metadata: ApiResponses = {
+    interPlanetaryStatusReport: interplanetaryStatusReport,
+    nftData,
+    metaScanData,
+    planetData,
+    chatData: {} as ChatData,
+    midjourneyConfig,
     imageData: {} as Response,
   };
 
+  let count: number;
   const loadSounds = useCallback(async () => {
     const spaceshipOn = await audioController?.loadSound("/audio/spaceship-on.wav");
     const spaceshipHum = await audioController?.loadSound("/audio/spaceship-hum.wav");
@@ -263,21 +328,12 @@ export default function Home() {
     }
   }
 
-  function createTravelResult(metadata: Metadata) {
+  function createTravelResult() {
     // Collect all the required information for the travel result
-    setMetadata(metadata);
-    handleApiResponse(response as Partial<ApiResponses>);
-    setDisplayImageUrl(imageUrl, "character");
-    setBackgroundImageUrl(backgroundImageUrl, "background");
-    const travelResult = {
-      metadata: metadata,
-      backgroundImageUrl: backgroundImageUrl,
-      imageUrl: imageUrl,
-      apiResponses: error ? error : response,
-      timestamp: new Date(),
-    };
+    setDisplayImageUrl(imageUrl);
+    setBackgroundImageUrl(backgroundImageUrl);
 
-    return travelResult;
+    return;
   }
 
   const handleActiveSate = (imageUrl: string, selectedDescription: string, interplanetaryStatusReport: string) => {
@@ -290,233 +346,95 @@ export default function Home() {
   };
 
   const handleClearAppState = () => {
-    setStoreState({
-      interplanetaryStatusReports: [],
-      scanningResults: [],
-      imagesStored: [],
-    });
+    reset();
+    resetImages();
   };
 
-  function generateMetadata() {
-    if (metadata.srcUrl === "" || travelStatus !== "NoTarget") {
-      console.log("generateMetadata() imageUrl is empty");
+  const generateMetadata = async (n: NftData) => {
+    if (isNaN(count)) {
+      count = 0;
+      await fetchScanningReport(n)
+        .then(async e => {
+          count++;
+          toast.success(
+            `
+                    AGENT LOCATION: ${JSON.stringify(e.currentLocation)}\n
+                    Current Mission Brief: ${JSON.stringify(e.currentMissionBrief)}\n
+                    RESULT SENT TO BACKEND"`,
+          );
+          await fetchTargetPlanet(e).then(async r => {
+            count++;
+            toast.success(`PLANET ID: ${r.planetId}\n
+                                           LocationName: ${r.Scan.locationName}\n
+                                           EnvScan: ${r.Scan.environmental_analysis}`);
+            await fetchInterplanetaryStatusReport(r);
+          });
+        })
+        .catch((err: any) => {
+          console.log("ERROR", err);
+          return (count = NaN);
+        });
+    } else {
+      toast.error("fetching error");
+      console.log("count", count, selectedTokenId);
       return;
     }
-    fetchScanningReport();
-    setMetadata(metadata);
-    console.log("SCANNING RESULT SENT TO BACKEND", { scannerOutput, metadata });
-    updateState("scannerOutput", scannerOutput);
-  }
+  };
 
-  useEffect(() => {
-    generateMetadata();
-  }, [metadata.srcUrl]);
   // TRAVEL HANDLER
-
-  const fetchInterplanetaryStatusReport = async () => {
+  const fetchScanningReport = async (nftQuery: NftData) => {
     try {
-      const response = await axios.post("/api/generate_report", {
-        scannerOutput: scannerOutput,
-        metadata: metadata,
-        alienMessage: alienMessage,
-      });
-      console.log("interplanetaryStatusReport", response.data.report);
-
-      updateState("interplanetaryStatusReport", response.data.report);
-    } catch (error) {
-      console.error("Error fetching interplanetary status report:", error);
-    }
-  };
-
-  const fetchTargetPlanet = async () => {
-    try {
-      console.log(metadata);
-      const response = await axios.post("/api/alienEncoder", {
-        englishMessage: JSON.stringify(scannerOutput),
-        metadata: metadata,
-      });
-      console.log("modified prompt gpt");
-      updateState("alienMessage", response.data.alienMessage);
-
-      console.log("alienMessage", response.data.alienMessage);
-    } catch (error) {
-      console.error("Error fetching target planet:", error);
-    }
-    console.log("fetchTargetPlanet", metadata);
-  };
-
-  useEffect(() => {
-    updateState("prevTravelStatus", travelStatus);
-    console.log("prevTravelStatus", prevTravelStatus);
-    if (travelStatus === "NoTarget" && prevTravelStatus === "TargetAcquired") {
-      // setTravels: (newTravel: any) => set(state => ({ travels: [...state.travels, newTravel] })),
-      setTravels(createTravelResult(metadata));
-      console.log("GENERATED TRAVEL OUTPUT:", travels[1]);
-    }
-  }, [travelStatus]);
-
-  // handler for describing images
-  useEffect(() => {
-    setStoreState(prevState => ({
-      ...prevState,
-      interplanetaryStatusReports: [...prevState.interplanetaryStatusReports, interplanetaryStatusReport],
-    }));
-  }, [interplanetaryStatusReport]);
-
-  useEffect(() => {
-    setStoreState(prevState => ({
-      ...prevState,
-      scanningResults: [...prevState.scanningResults, description],
-    }));
-  }, [description]);
-
-  useEffect(() => {
-    setStoreState(prevState => ({
-      ...prevState,
-      imagesStored: [...prevState.imagesStored, imageUrl],
-    }));
-  }, [imageUrl]);
-
-  // handle recieving data from chlidren
-
-  const handleImageSrcReceived = (imageSrc: string) => {
-    updateState("srcUrl", imageSrc);
-
-    console.log(srcUrl);
-    // Handle the imageSrc here, e.g., update the state or call another function
-  };
-  const handleModifedPrompt = (modifiedPrompt: string) => {
-    updateState("modifiedPrompt", modifiedPrompt);
-
-    console.log(" updateAllData(); foor modifiedPrompt");
-  };
-  const handleSelectedTokenIdRecieved = (selectedTokenId: string) => {
-    updateState("selectedTokenId", selectedTokenId);
-  };
-  const handleTokenIdsReceived = (tokenIds: string[]) => {
-    // Handle the token IDs here, e.g., update the state or call another function
-  };
-
-  const fetchScanningReport = async () => {
-    try {
-      console.log(metadata);
       const response = await axios.post("/api/scanning_result", {
-        metadata: metadata,
+        metadata: nftQuery,
       });
-      console.log("modified prompt gpt", metadata);
       updateState("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
       console.log("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
+      const r = JSON.parse(response.data.scannerOutput.rawOutput);
+      setMetaScanData(r);
+      return r;
     } catch (error) {
       console.error("Error fetching scanning report:", error);
     }
   };
-  const handleScanning = (scanning: boolean) => {
-    updateState("scanning", scanning);
-    console.log("SCANNING", { scanning });
-    console.log("alienMessage", alienMessage, "interplanetaryStatusReport", interplanetaryStatusReport);
 
-    return console.log("Tried to Upscale new background but", { travelStatus, scanning });
-  };
-
-  const handleMetadataReceived = (metadata: any) => {
-    console.log("Metadata received in the parent component:", metadata);
-    // Extract the attributes from the metadata
-    const attributes = metadata.attributes.reduce((acc: any, attr: any) => {
-      acc[attr.trait_type] = attr.value;
-      return acc;
-    }, {});
-
-    // Update the state variables
-    updateState("level", attributes.Level);
-    updateState("power1", attributes["Power 1"]);
-    updateState("power2", attributes["Power 2"]);
-    updateState("power3", attributes["Power 3"]); // Assuming there is a Power 3 attribute in the metadata
-    updateState("power4", attributes["Power 4"]); // Assuming there is a Power 4 attribute in the metadata
-    updateState("alignment1", attributes["Alignment 1"]);
-    updateState("alignment2", attributes["Alignment 2"]);
-    updateState("side", attributes.Side);
-  };
-
-  const handleEngaged = (engaged: boolean) => {
-    if (engaged === true) {
-      console.log("WARP DRIVE IS ENGAGED", { warping, engaged });
-    }
-  };
-
-  function generatePrompt(
-    type: "character" | "background",
-    srcUrl: string | null,
-    level: string,
-    power1: string,
-    power2: string,
-    power3: string | "",
-    power4: string | "",
-    alignment1: string,
-    alignment2: string,
-    selectedDescription: string,
-    nijiFlag: boolean,
-    vFlag: boolean,
-    side: string | "",
-    currentEquipmentAndVehicle: string[] | null,
-    currentMissionBrief: string | null,
-    abilities: string[] | null,
-    powerLevel: number | null,
-    funFact: string | null,
-    alienMessage: string | "",
-    biometricReading?: { health: number; status: string[] } | null,
-  ): string {
-    const niji = nijiFlag ? "--niji 5" : "";
-    const v = vFlag ? "--v 5" : "";
-    const keyword = type === "background" ? "The Planet Of" : "A portrait of";
-    const randomPlanet =
-      "https://discovery.sndimg.com/content/dam/images/discovery/fullset/2022/9/alien%20planet%20GettyImages-913058614.jpg.rend.hgtvcom.406.406.suffix/1664497398007.jpeg";
-    if (type === "background")
-      return `${randomPlanet} ${keyword} ${alienMessage} ${niji} ${v} viewed from space`.trim();
-
-    return `${srcUrl}  ${keyword}  ${level} ${power1} ${power2} ${power3} ${power4} ${currentMissionBrief} Power Level: ${powerLevel}${biometricReading?.health} ${currentEquipmentAndVehicle} ${abilities} ${funFact} ${alignment1} ${alignment2} ${side} ${selectedDescription} ${niji} ${v}`.trim();
-  }
-
-  const handleDescribeClick = async () => {
-    console.log(
-      `Submitting image URL: ${scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl}`,
-    );
-    updateState("loading", true);
-
-    if (waitingForWebhook) {
-      console.log("Already waiting for webhook, please wait for response.");
-      return;
-    }
-
-    updateState("waitingForWebhook", true);
-
-    const url = scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl;
-    console.log("url", url);
+  const fetchInterplanetaryStatusReport = async (s: PlanetData) => {
     try {
-      const response = await axios.post("/api/postDescription", {
-        url: url,
+      const response = await axios.post("/api/generate_report", {
+        metaScanData,
+        nftData,
+        planetData: s,
       });
 
-      // Remove the first grapheme (emoji) from each string in the description array
-      const splitter = new GraphemeSplitter();
-      console.log("response.data.response.content", response.data);
-      const cleanedDescription = response.data.response.content.map((desc: string) => {
-        const graphemes = splitter.splitGraphemes(desc);
-        return graphemes.slice(1).join("");
-      });
+      const t = JSON.parse(response.data.report);
 
-      updateState("description", cleanedDescription);
-      updateState("selectedDescription", cleanedDescription[0]);
-    } catch (e: any) {
-      console.log(e);
-      updateState("error", e.message);
-      updateState("warping", false);
-      updateState("travelStatus", "NoTarget");
-      updateState("scanning", false);
+      setInterplanetaryStatusReport(t);
 
-      updateState("loading", false);
+      toast.success(`AI-U IPS Report Recieved\n
+                            MissionId: ${response.data.report.missionId}
+                            objective:${t.objective}
+                            Mission Data: ${JSON.stringify(t.metadata)}`);
+      count = NaN;
+      return t;
+    } catch (error) {
+      count = NaN;
+      console.error("Error fetching interplanetary status report:", error);
     }
-    fetchTargetPlanet();
-    updateState("waitingForWebhook", false);
+  };
+
+  const fetchTargetPlanet = async (r: MetaScanData) => {
+    try {
+      const response = await axios.post("/api/alienEncoder", {
+        metaScanData: r,
+        nftData: nftData,
+      });
+      const s = JSON.parse(response.data.alienMessage);
+      setPlanetData(s);
+      return s;
+
+      console.log("fetchTargetPlanet", s);
+    } catch (error) {
+      console.error("Error fetching target planet:", error);
+    }
   };
 
   async function fetchProgress(
@@ -552,29 +470,7 @@ export default function Home() {
 
   // handler for Generating images
   const submitPrompt = async (type: "character" | "background") => {
-    fetchInterplanetaryStatusReport();
-    let prompt = generatePrompt(
-      type,
-      srcUrl ? srcUrl : "",
-      level,
-      power1,
-      power2,
-      power3,
-      power4,
-      alignment1,
-      alignment2,
-      description[selectedDescriptionIndex],
-      nijiFlag,
-      vFlag,
-      side,
-      currentEquipmentAndVehicle,
-      currentMissionBrief,
-      abilities,
-      powerLevel,
-      funFact,
-      alienMessage,
-      biometricReading,
-    );
+    let prompt = generatePrompt(type, metadata);
 
     if (waitingForWebhook) {
       console.log("Already waiting for webhook, please wait for response.");
@@ -598,8 +494,10 @@ export default function Home() {
       // Set the appropriate state based on the type
       if (type === "character") {
         updateState("imageUrl", r.data.response.imageUrl);
+        updateState("buttonMessageId", r.data.buttonMessageId);
       } else {
         updateState("tempUrl", r.data.response.imageUrl);
+        updateState("buttonMessageId", r.data.buttonMessageId);
       }
     } catch (e: any) {
       console.log(e);
@@ -619,6 +517,9 @@ export default function Home() {
   };
 
   // handler for upscaling images
+  //
+  //
+
   const handleButtonClick = async (button: string, type: "character" | "background") => {
     console.log("handleButtonClickhandleButtonClickhandleButtonClick", button, type);
     if (waitingForWebhook) {
@@ -635,8 +536,6 @@ export default function Home() {
       updateState("travelStatus", "TargetAcquired");
       updateState("warping", true);
     }
-
-    const bMessageId = buttonMessageId;
 
     try {
       console.log("button", button, bMessageId);
@@ -685,7 +584,8 @@ export default function Home() {
       }
 
       if (type === "character") {
-        updateState("imageUrl", imageUrl);
+        updateState("tempUrl", imageUrl);
+        setDisplayImageUrl(imageUrl ? imageUrl : "");
       } else if (type === "background") {
         updateState("backgroundImageUrl", imageUrl);
         updateState("imageUrl", imageUrl);
@@ -706,10 +606,84 @@ export default function Home() {
     updateState("scanning", false);
     updateState("waitingForWebhook", false);
     updateState("travelStatus", "NoTarget");
-    setBackgroundImageUrl(imageUrl, type);
-    setDisplayImageUrl(imageUrl, type);
+    setBackgroundImageUrl(imageUrl);
+
     updateState("loadingProgress", 0);
     // handleDescribeClick();
+  };
+
+  // handle recieving data from chlidren
+
+  const handleImageSrcReceived = (imageSrc: string) => {
+    console.log(srcUrl);
+    // Handle the imageSrc here, e.g., update the state or call another function
+  };
+
+  const handleModifedPrompt = (modifiedPrompt: Partial<ApiResponses>) => {
+    updateState("modifiedPrompt", modifiedPrompt);
+
+    console.log(" updateAllData(); foor modifiedPrompt");
+  };
+  const handleSelectedTokenIdRecieved = (selectedTokenId: string) => {
+    updateState("selectedTokenId", selectedTokenId);
+  };
+  const handleTokenIdsReceived = (tokenIds: string[]) => {
+    // Handle the token IDs here, e.g., update the state or call another function
+  };
+
+  const handleScanning = (scanning: boolean) => {
+    updateState("scanning", scanning);
+    console.log("SCANNING", { scanning });
+
+    return console.log("Tried to Upscale new background but", { travelStatus, scanning });
+  };
+
+  const handleEngaged = (engaged: boolean) => {
+    if (engaged === true) {
+      console.log("WARP DRIVE IS ENGAGED", { warping, engaged });
+    }
+  };
+
+  const handleDescribeClick = async () => {
+    console.log(
+      `Submitting image URL: ${scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl}`,
+    );
+    updateState("loading", true);
+
+    if (waitingForWebhook) {
+      console.log("Already waiting for webhook, please wait for response.");
+      return;
+    }
+
+    updateState("waitingForWebhook", true);
+
+    const url = scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl;
+    console.log("url", url);
+    try {
+      const response = await axios.post("/api/postDescription", {
+        url: url,
+      });
+
+      // Remove the first grapheme (emoji) from each string in the description array
+      const splitter = new GraphemeSplitter();
+      console.log("response.data.response.content", response.data);
+      const cleanedDescription = response.data.response.content.map((desc: string) => {
+        const graphemes = splitter.splitGraphemes(desc);
+        return graphemes.slice(1).join("");
+      });
+
+      updateState("description", cleanedDescription);
+      updateState("selectedDescription", cleanedDescription[0]);
+    } catch (e: any) {
+      console.log(e);
+      updateState("error", e.message);
+      updateState("warping", false);
+      updateState("travelStatus", "NoTarget");
+      updateState("scanning", false);
+
+      updateState("loading", false);
+    }
+    updateState("waitingForWebhook", false);
   };
 
   return (
@@ -721,17 +695,14 @@ export default function Home() {
           <Dashboard
             loadingProgress={loadingProgress}
             scanning={scanning}
-            response={response}
             error={error}
             warping={warping}
-            interplanetaryStatusReport={interplanetaryStatusReport}
             imageUrl={imageUrl || ""}
-            srcUrl={srcUrl}
+            srcUrl={srcUrl ? srcUrl : ""}
             onSubmitPrompt={submitPrompt}
             onSubmit={submitPrompt}
             handleButtonClick={handleButtonClick}
             loading={loading}
-            metadata={metadata}
             buttonMessageId={buttonMessageId}
             travelStatus={travelStatus}
             dynamicImageUrl={backgroundImageUrl}
@@ -740,9 +711,8 @@ export default function Home() {
             <AcquiringTarget loading={loading} travelStatus={travelStatus} selectedTokenId={selectedTokenId} />
 
             <TokenSelectionPanel
-              parsedMetadata={metadata}
               warping={warping}
-              scannerOutput={scannerOutput}
+              scannerOutput={metaScanData}
               playSpaceshipOn={playSpaceshipOn}
               playHolographicDisplay={playHolographicDisplay}
               playSpaceshipHum={playSpaceshipHum}
@@ -759,13 +729,11 @@ export default function Home() {
               onImageSrcReceived={handleImageSrcReceived}
               onTokenIdsReceived={handleTokenIdsReceived}
               onSelectedTokenIdRecieved={handleSelectedTokenIdRecieved}
-              interplanetaryStatusReport={interplanetaryStatusReport}
               onSubmit={submitPrompt}
               travelStatus={travelStatus}
             />
             <DescriptionPanel
-              metadata={metadata}
-              alienMessage={alienMessage}
+              alienMessage={planetData}
               playHolographicDisplay={playHolographicDisplay}
               handleClearAppState={handleClearAppState}
               handleActiveState={handleActiveSate}
@@ -774,7 +742,6 @@ export default function Home() {
               scanning={scanning}
               handleScanning={handleScanning}
               travelStatus={travelStatus}
-              interplanetaryStatusReport={interplanetaryStatusReport}
               selectedTokenId={selectedTokenId}
               description={description}
               onDescriptionIndexChange={newDescription => updateState("setSelectedDescription", newDescription)}
@@ -789,7 +756,6 @@ export default function Home() {
               engaged={warping}
               setModifiedPrompt={handleModifedPrompt}
               imageUrl={imageUrl}
-              interplanetaryStatusReport={interplanetaryStatusReport}
               description={selectedDescription ? selectedDescription : "No Description"}
               srcUrl={srcUrl || ""}
               onSubmitPrompt={submitPrompt}

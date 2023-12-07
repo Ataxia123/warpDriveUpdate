@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import type { Metadata } from "~~/types/appTypes";
+import type { ApiResponses, ToggleOptions } from "~~/types/appTypes";
+import { generatePrompt, stringToHex, trimmedPrompt } from "~~/utils/nerdUtils";
 
 interface SwitchboardProps {
   description: string;
@@ -10,160 +11,34 @@ interface SwitchboardProps {
   travelStatus: string;
   engaged: boolean;
   warped: boolean;
-  onModifiedPrompt: (modifiedPrompt: string) => void;
+  onModifiedPrompt: (modifiedPrompt: Partial<ApiResponses>) => void;
   attributes: string[];
   onToggle: (attribute: string, isEnabled: boolean) => void;
-  generatePrompt: (
-    type: "character" | "background",
-    srcUrl: string | null,
-    level: string,
-    power1: string,
-    power2: string,
-    power3: string | "",
-    power4: string | "",
-    alignment1: string,
-    alignment2: string,
-    selectedDescription: string,
-    nijiFlag: boolean,
-    vFlag: boolean,
-    side: string | "",
-    currentEquipmentAndVehicle: string[] | null,
-    currentMissionBrief: string | null,
-    abilities: string[] | null,
-    powerLevel: number | null,
-    funFact: string | null,
-    alienMessage: string | "",
-    biometricReading?: { health: number; status: string[] } | null,
-  ) => string;
 
-  promptData: Metadata;
+  promptData: ApiResponses;
   selectedAttributes: string[];
 }
 
 export const Switchboard: React.FC<SwitchboardProps> = ({
-  description,
   playHolographicDisplay,
-  imageUrl,
   scanning,
-  handleEngaged,
   travelStatus,
-  engaged,
   attributes,
-  onToggle,
-  generatePrompt,
   promptData,
-  selectedAttributes,
-  onModifiedPrompt,
-  warped,
 }) => {
-  const excludedAttributes = [""];
   const [modifiedPrompt, setModifiedPrompt] = useState("ALLIANCEOFTHEINFINITEUNIVERSE");
-  const [checkedAttributes, setCheckedAttributes] = useState([...attributes]);
 
   // set string state to be either "character" or "background enforcing type
   const [type, setType] = useState<"character" | "background">("character");
-  const [og, setOg] = useState<boolean>(false);
   const [nijiFlag, setNijiFlag] = useState<boolean>(false);
   const [vFlag, setVFlag] = useState<boolean>(false);
   const [displayPrompt, setDisplayPrompt] = useState("");
-
-  const handleToggle = (attribute: string) => {
-    if (checkedAttributes.includes(attribute)) {
-      setCheckedAttributes(checkedAttributes.filter(attr => attr !== attribute));
-    } else {
-      setCheckedAttributes([...checkedAttributes, attribute]);
-    }
-  };
-
+  const [toggleOptions, setToggleOptions] = useState<ToggleOptions>({});
   useEffect(() => {
     generateModifiedPrompt();
-    setDisplayPrompt(modifiedPrompt);
-  }, [checkedAttributes]);
+  }, [toggleOptions]);
 
-  const generateModifiedPrompt = () => {
-    const {
-      srcUrl,
-      Level,
-      Power1,
-      Power2,
-      Power3,
-      Power4,
-      Alignment1,
-      Alignment2,
-      selectedDescription,
-      Side,
-      interplanetaryStatusReport,
-      abilities,
-      funFact,
-      currentEquipmentAndVehicle,
-      currentMissionBrief,
-      powerLevel,
-      alienMessage,
-    } = promptData;
-
-    const selectedData = {
-      srcUrl,
-      Level,
-      Power1,
-      Power2,
-      Power3,
-      Power4,
-      Alignment1,
-      Alignment2,
-      selectedDescription,
-      Side,
-      interplanetaryStatusReport,
-      abilities,
-      funFact,
-      currentEquipmentAndVehicle,
-      currentMissionBrief,
-      powerLevel,
-      alienMessage,
-    };
-    const filteredData: Partial<Metadata> = {};
-
-    checkedAttributes.forEach(attr => {
-      const key = attr as keyof typeof selectedData;
-      if (selectedData.hasOwnProperty(key)) {
-        //filteredData[key] = selectedData[key];
-      }
-    });
-
-    const modifiedPrompt = generatePrompt(
-      scanning ? "background" : "character",
-
-      !og ? filteredData.srcUrl || "" : imageUrl || "",
-      filteredData.Level || "",
-      filteredData.Power1 || "",
-      filteredData.Power2 || "",
-      filteredData.Power3 || "",
-      filteredData.Power4 || "",
-      filteredData.Alignment1 || "",
-      filteredData.Alignment2 || "",
-      filteredData.selectedDescription || "",
-      // Pass the additional text input here
-      nijiFlag,
-      vFlag,
-      filteredData.Side || "",
-
-      filteredData.currentEquipmentAndVehicle || [], // Pass the equipment here,
-
-      filteredData.currentMissionBrief || "", // Pass the mission brief here
-
-      filteredData.abilities || [], // Pass the abilities here
-
-      filteredData.powerLevel || 0, // Pass the power level here
-      filteredData.funFact || "", // Pass the fun fact here
-
-      filteredData.alienMessage || "", // Pass the alien message here
-    );
-
-    setModifiedPrompt(modifiedPrompt);
-  };
-
-  useEffect(() => {
-    setDisplayPrompt(modifiedPrompt);
-  }, [modifiedPrompt]);
+  const switchBoardButtons = ["Niji", "V5", "Background", "DESC", "URL", "CLEAR"];
 
   const renderCheckbox = (label: string, state: boolean, setState: React.Dispatch<React.SetStateAction<boolean>>) => (
     <label>
@@ -178,6 +53,16 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
       />
     </label>
   );
+  const generateModifiedPrompt = () => {
+    const promptType = scanning ? "background" : "character";
+
+    const response = generatePrompt(promptType, promptData);
+    // Use the toggleOptions to filter the promptData
+    const newPrompt = trimmedPrompt(response);
+    // Generate the prompt using the filtered data
+    // Update the modifiedPrompt state
+    setModifiedPrompt(newPrompt);
+  };
 
   return (
     <>
@@ -263,7 +148,7 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
                         {
                           generateModifiedPrompt();
                           playHolographicDisplay();
-                          onModifiedPrompt(displayPrompt || "");
+                          //onModifiedPrompt(displayPrompt || "");
                         }
                         e.stopPropagation();
                       }}
@@ -288,46 +173,7 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
                     >
                       {renderCheckbox("nijiFlag", nijiFlag, setNijiFlag)}
                       {renderCheckbox("vFlag", vFlag, setVFlag)}
-                      {renderCheckbox("Original Image", og, setOg)}
-                    </div>
-                    {attributes.map(attribute => {
-                      const displayName =
-                        attribute === "selectedDescription"
-                          ? "DESCRIPTION"
-                          : attribute === "alienMessage"
-                          ? "Alien Message"
-                          : attribute === "funFact"
-                          ? "FunFact"
-                          : attribute === "healthAndStatus"
-                          ? "Status"
-                          : attribute === "abilities"
-                          ? "Abilities"
-                          : attribute === "equipment"
-                          ? "Equipment"
-                          : attribute === "interplanetaryStatusReport"
-                          ? "Report"
-                          : attribute === "selectedDescription"
-                          ? "Scan"
-                          : !excludedAttributes.includes(attribute) && promptData[attribute as keyof typeof promptData]
-                          ? promptData[attribute as keyof typeof promptData]
-                          : attribute;
-
-                      const isChecked = !checkedAttributes.includes(attribute);
-
-                      return (
-                        <div
-                          style={{ overflow: "hidden" }}
-                          key={attribute}
-                          className={`switchboard-attribute ${isChecked ? "checked" : ""} spaceship-panel`}
-                          onClick={e => {
-                            e.stopPropagation();
-                            playHolographicDisplay();
-                            generateModifiedPrompt();
-                            handleToggle(attribute);
-                          }}
-                        ></div>
-                      );
-                    })}
+                    </div>{" "}
                   </div>
                 </div>
               </div>
@@ -339,14 +185,6 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
       </div>
     </>
   );
+  // Helper function to convert a string to a hex string
 };
-// Helper function to convert a string to a hex string
-function stringToHex(str: string): string {
-  let hex = "";
-  for (let i = 0; i < str.length; i++) {
-    hex += str.charCodeAt(i).toString(16);
-  }
-  return hex;
-}
-
 export default Switchboard;

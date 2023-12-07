@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import type { Metadata } from "~~/types/appTypes";
+import type { NftData } from "~~/types/appTypes";
 
 interface ChatWithCaptainProps {
-  metadata: Metadata;
+  metadata: NftData;
 }
 
 const ChatWithCaptain: React.FC<ChatWithCaptainProps> = ({ metadata }) => {
-  const scanResults = metadata.abilities;
+  const scanResults = metadata.Level;
   const [chatLog, setChatLog] = useState<string[]>([]);
   const [userMessage, setUserMessage] = useState<string>("");
 

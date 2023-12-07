@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import LogViewer from "./LogViewer";
+import { useGlobalState } from "~~/services/store/store";
+import type { ApiResponses, InterPlanetaryStatusReport, PlanetData } from "~~/types/appTypes";
 
 interface StoreState {
   interplanetaryStatusReports: string[];
@@ -8,8 +10,7 @@ interface StoreState {
 }
 
 interface DescriptionPanelProps {
-  metadata: Metadata;
-  alienMessage: string;
+  alienMessage: PlanetData;
   playHolographicDisplay: () => void;
   handleClearAppState: () => void;
   handleActiveState: (imageUrl: string, selectedDescription: string, interplanetaryStatusReport: string) => void;
@@ -23,35 +24,10 @@ interface DescriptionPanelProps {
   onDescriptionIndexChange: (index: number) => void;
   selectedTokenId: string | null;
   handleDescribeClick: () => void;
-  interplanetaryStatusReport: string;
   handleSubmit: (type: "character" | "background") => Promise<void>;
 }
-type Metadata = {
-  srcUrl: string;
-  Level: string;
-  Power1: string;
-  Power2: string;
-  Power3: string;
-  Power4: string;
-  Alignment1: string;
-  Alignment2: string;
-  Side: string;
-  interplanetaryStatusReport: string;
-  selectedDescription: string;
-  nijiFlag: boolean;
-  vFlag: boolean;
-  biometricReading: { health: number; status: string[] };
-  currentEquipmentAndVehicle: string[];
-  currentMissionBrief: string;
-  abilities: string[];
-  powerLevel: number;
-  funFact: string;
-  currentLocation: { x: number; y: number; z: number };
-  alienMessage: string;
-};
 
 export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
-  metadata,
   alienMessage,
   playHolographicDisplay,
   handleClearAppState,
@@ -60,7 +36,6 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
   scanning,
   handleScanning,
   travelStatus,
-  interplanetaryStatusReport,
   description,
 
   handleDescribeClick,
@@ -91,7 +66,28 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
     handleSubmit("background");
     setToggle(!toggle);
   };
+  const interplanetaryStatusReport = useGlobalState(state => state.interPlanetaryStatusReport);
+  const ipsrOptions = [
+    "missionId",
+    "location",
+    "characters",
+    "objective",
+    "status",
+    "surroundingsDescription",
+    "conflictDescription",
+    "metadata",
+    "narrative",
+  ];
 
+  const [count, setCount] = useState(-1);
+  const index = () => {
+    playHolographicDisplay();
+    if (count < ipsrOptions.length - 1) {
+      setCount(count + 1);
+    } else {
+      setCount(-1);
+    }
+  };
   return (
     <div
       className={`${
@@ -152,14 +148,14 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
         </p>
         <br />
         <>
-          {travelStatus === "NoTarget" && <>TARGETING SYSTEM NOT ENGAGED</>}
+          {interplanetaryStatusReport.missionId! && <>TARGETING SYSTEM NOT ENGAGED</>}
 
-          {description && travelStatus !== "NoTarget" ? ( //wip
+          {interplanetaryStatusReport.missionId ? ( //wip
             <>
               <p
                 className="description-text"
                 style={{
-                  top: "71%",
+                  top: "20%",
                   position: "absolute",
                 }}
               >
@@ -185,7 +181,17 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
                   justifyContent: "right",
                   scale: "1.1",
                 }}
+                onClick={e => {
+                  e.stopPropagation();
+                  index();
+                }}
               >
+                <span className="text-white text-2xl">{ipsrOptions[count]} </span> <br />
+                <div className="text-lg pr-4">
+                  {interplanetaryStatusReport &&
+                    JSON.stringify(interplanetaryStatusReport[ipsrOptions[count] as keyof InterPlanetaryStatusReport])}
+                </div>
+                <div className="text-sm">{}</div>
                 <div
                   className="hex-data"
                   style={{
@@ -194,22 +200,13 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
                     pointerEvents: "none",
                   }}
                 >
-                  {description}
+                  {JSON.stringify(interplanetaryStatusReport)}
                 </div>
                 <div
                   onClick={e => {
                     e.stopPropagation();
                   }}
-                >
-                  <LogViewer
-                    alienMessage={alienMessage}
-                    playHolographicDisplay={playHolographicDisplay}
-                    storeState={storeState}
-                    handleActiveState={handleActiveState}
-                    handleClearAppState={handleClearAppState}
-                    metadata={metadata}
-                  />
-                </div>
+                ></div>
               </div>
             </>
           ) : (

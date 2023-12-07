@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import ReadAIU from "../ReadAIU";
-import type { Metadata } from "~~/types/appTypes";
+import type { ApiResponses } from "~~/types/appTypes";
 
 interface TokenSelectionPanelProps {
   warping: boolean;
-  parsedMetadata: Metadata;
   scannerOutput: {
     biometricReading: { health: number; status: string[] };
     currentEquipmentAndVehicle: string[];
@@ -26,7 +25,6 @@ interface TokenSelectionPanelProps {
   onTokenIdsReceived: (tokenIds: string[]) => void;
   onSelectedTokenIdRecieved: (selectedTokenId: string) => void;
   onSubmit: (type: "character" | "background") => Promise<void>;
-  interplanetaryStatusReport: string;
   engaged: boolean;
   travelStatus: string;
   playHolographicDisplay: () => void;
@@ -35,7 +33,6 @@ interface TokenSelectionPanelProps {
 }
 
 const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
-  parsedMetadata,
   warping,
   scannerOutput,
   playSpaceshipOn,
@@ -54,7 +51,6 @@ const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
   onImageSrcReceived,
   onTokenIdsReceived,
   onSelectedTokenIdRecieved,
-  interplanetaryStatusReport,
   onSubmit,
   travelStatus,
 }) => {
@@ -72,7 +68,6 @@ const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
   return (
     <>
       <ReadAIU
-        parsedMetadata={parsedMetadata}
         warping={warping}
         scannerOutput={scannerOutput}
         playSpaceshipOn={playSpaceshipOn}
@@ -85,7 +80,6 @@ const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
         buttonMessageId={buttonMessageId}
         engaged={engaged}
         modifiedPrompt={modifiedPrompt}
-        interplanetaryStatusReport={interplanetaryStatusReport}
         setTravelStatus={setTravelStatus}
         handleEngaged={handleEngaged}
         travelStatus={travelStatus}

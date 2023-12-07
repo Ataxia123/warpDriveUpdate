@@ -3,7 +3,7 @@ import type { AppProps } from "next/app";
 import { RainbowKitProvider, darkTheme, lightTheme } from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
 import NextNProgress from "nextjs-progressbar";
-import { Toaster } from "react-hot-toast";
+import { ToastBar, Toaster, toast } from "react-hot-toast";
 import { useDarkMode } from "usehooks-ts";
 import { WagmiConfig } from "wagmi";
 import { Footer } from "~~/components/Footer";
@@ -34,7 +34,42 @@ const ScaffoldEthApp = ({ Component, pageProps }: AppProps) => {
         </main>
         <Footer />
       </div>
-      <Toaster />
+      {/*<Toaster
+                containerClassName=""
+                toastOptions={{
+
+                    className: "spaceship-display-screen",
+
+                    success: {
+
+                        duration: 8000,
+                        style: {
+                            background: "#1f2937",
+                            color: "#fff",
+                        },
+                        iconTheme: {
+                            primary: 'orange',
+                            secondary: 'black',
+                        },
+
+                    },
+                }}
+                position="bottom-right"
+            >
+                {(t) => (
+                    <ToastBar toast={t}>
+                        {({ icon, message }) => (
+                            <>
+                                {icon}
+                                {message}
+                                {t.type !== 'loading' && (
+                                    <button onClick={() => toast.dismiss(t.id)}>X</button>
+                                )}
+                            </>
+                        )}
+                    </ToastBar>
+                )}
+            </Toaster>*/}
     </>
   );
 };

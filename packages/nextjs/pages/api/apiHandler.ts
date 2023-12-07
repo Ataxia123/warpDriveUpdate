@@ -21,7 +21,7 @@ function sleep(milliseconds: number) {
  * You can also use a webhook to get notified when the image is ready.
  * It will contain the same response body as seen here.
  */
-const fetchToCompletion: any = async (messageId: string, retryCount: number, maxRetry = 20) => {
+const fetchToCompletion: any = async (messageId: string, retryCount: number, maxRetry = 40) => {
   const imageRes = await fetch(`${BASE_URL}/message/${messageId}`, {
     method: "GET",
     headers: AUTH_HEADERS,
@@ -34,20 +34,25 @@ const fetchToCompletion: any = async (messageId: string, retryCount: number, max
   }
 
   if (imageResponseData.progress === "incomplete") {
-    throw new Error("Image generation failed");
+    console.log(imageResponseData);
+    throw new Error("Image generation failed", imageResponseData.message);
   }
 
   if (retryCount > maxRetry) {
     throw new Error("Max retries exceeded");
   }
 
-  if (imageResponseData.progress && imageResponseData.progressImageUrl) {
+  if (imageResponseData.progress) {
     console.log("---------------------");
     console.log(`Progress: ${imageResponseData.progress}%`);
     console.log(`Progress Image Url: ${imageResponseData.progressImageUrl}`);
     console.log("---------------------");
   }
-
+  console.log("---------------------");
+  console.log(`Progress: ${JSON.stringify(imageResponseData)}%`);
+  console.log(retryCount);
+  console.log(`Progress Image Url: ${imageResponseData.progress}`);
+  console.log("---------------------");
   await sleep(5000);
   return fetchToCompletion(messageId, retryCount + 1);
 };

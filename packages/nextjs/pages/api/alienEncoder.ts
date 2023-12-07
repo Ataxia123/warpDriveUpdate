@@ -1,23 +1,24 @@
 // /pages/api/generateAlienLanguage.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
-import type { Metadata } from "~~/types/appTypes";
+import type { MetaScanData, NftData, PlanetData } from "~~/types/appTypes";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_AUTH_TOKEN,
 });
 
-async function generateAlienLanguage(metadata: Metadata) {
+async function generateAlienLanguage(metaScanData: MetaScanData, nftData: NftData) {
   const messages: any[] = [
     {
       role: "system",
-      content: `"You are the targetting computer of a ship in the Alliance of the Infinite Universe. 
-        You have just recieved a transmission from the following coordinates:
-        ${metadata.currentLocation}.
-        You need to need to triangulate the following information and issue a report 
-        scan  with the following fields: 
+      content: `"You are the targetting computer of a ship in 
+            the Alliance of the Infinite Universe. 
+            You have just recieved a transmission from the following coordinates:
+            ${metaScanData.currentLocation}.
+            You need to need to triangulate the following information and issue a report 
+            scan  with the following fields: 
          {
-            locationCoordinates: ${metadata.currentLocation}.
+            locationCoordinates: ${metaScanData.currentLocation}.
             planetId: string;
             Scan: {
             locationName: string,
@@ -34,8 +35,11 @@ async function generateAlienLanguage(metadata: Metadata) {
     {
       role: "user",
       content: `"Incoming Transmissiong from
- ${metadata.Level} ${metadata.Power1} ${metadata.Power2} ${metadata.Power3}.
-Scanning ${metadata} Results Recieved. Begin scanning target location."`,
+        ${nftData.Level} ${nftData.Power1} ${nftData.Power2} ${nftData.Power3}.
+        MetaScanning:
+        ${JSON.stringify(metaScanData)} 
+        Results Recieved. 
+        Begin scanning target location."`,
     },
   ];
 
@@ -52,9 +56,9 @@ Scanning ${metadata} Results Recieved. Begin scanning target location."`,
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
-    const { englishMessage, metadata } = req.body;
+    const { metaScanData, nftData } = req.body;
     try {
-      const alienMessage = await generateAlienLanguage(metadata);
+      const alienMessage = await generateAlienLanguage(metaScanData, nftData);
 
       res.status(200).json({ alienMessage });
     } catch (error) {

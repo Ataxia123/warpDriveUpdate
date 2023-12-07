@@ -1,47 +1,22 @@
-import type { Response } from "~~/types/appTypes";
-
-type Metadata = {
-  Level: string;
-  Power1: string;
-  Power2: string;
-  Power3: string;
-  Power4: string;
-  Alignment1: string;
-  Alignment2: string;
-  Side: string;
-};
+import { useGlobalState } from "~~/services/store/store";
+import type { ApiResponses, Response } from "~~/types/appTypes";
+import { stringToHex } from "~~/utils/nerdUtils";
 
 interface PromptPanelProps {
   loadingProgress: number;
-  response: Response;
   error: string;
-  interplanetaryStatusReport: string;
   buttonMessageId: string | "";
   imageUrl: string;
   srcUrl: string | null;
   loading: boolean;
-  metadata: Metadata;
   onSubmitPrompt: (type: "character" | "background") => Promise<void>;
   onSubmit: (type: "character" | "background") => Promise<void>;
   handleButtonClick: (button: string, type: "character" | "background") => void;
 }
 
-export const MarqueePanel: React.FC<PromptPanelProps> = ({
-  loading,
-  loadingProgress,
-  response,
-  error,
-  metadata,
-  imageUrl,
-  interplanetaryStatusReport,
-}) => {
-  function stringToHex(str: string): string {
-    let hex = "ALLIANCEOFTHEINFINITEUNIVERSE";
-    for (let i = 0; i < str.length; i++) {
-      hex += str.charCodeAt(i).toString(16);
-    }
-    return hex;
-  }
+export const MarqueePanel: React.FC<PromptPanelProps> = ({ loadingProgress, error }) => {
+  const interplanetaryStatusReport = useGlobalState(state => state.interPlanetaryStatusReport);
+  const nftData = useGlobalState(state => state.nftData);
 
   return (
     <>
@@ -55,21 +30,21 @@ export const MarqueePanel: React.FC<PromptPanelProps> = ({
               left: "5%",
               width: "100%",
               height: "100%",
-              zIndex: 1009000000000000000000000000000000000000000,
               display: "flex",
             }}
             className="spaceship-screen-display"
           >
             Loading:{loadingProgress}
             <br />
-            {}
           </div>
           <br />
 
           <p className="marquee-content" id="mc">
-            {stringToHex(error ? error : metadata.Level ? metadata.Level : "")} RESPONSE------ INTERPLANETARY STATUS
-            REPORT: {interplanetaryStatusReport} ESTABLISHING CONNECTION WITH: {metadata.Level} {metadata.Power1}
-            {metadata.Power2} {metadata.Power3} {metadata.Power4}
+            {stringToHex(error ? error : nftData.Level ? nftData.Level : "")}
+            RESPONSE------ INTERPLANETARY STATUS REPORT: {JSON.stringify(interplanetaryStatusReport.location)}{" "}
+            ESTABLISHING CONNECTION WITH:
+            {nftData.Level} {nftData.Power1}
+            {nftData.Power2} {nftData.Power3} {nftData.Power4}
           </p>
         </div>
       </div>

@@ -12,7 +12,6 @@ export const Faucet = () => {
   const [loading, setLoading] = useState(false);
 
   const { chain: ConnectedChain } = useNetwork();
-  const metadata = useGlobalState(state => state.metadata);
   return (
     <div className="">
       <label htmlFor="faucet-modal" className="btn btn-primary btn-sm font-normal normal-case gap-1">

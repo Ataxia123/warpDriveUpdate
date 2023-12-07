@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
-import type { Metadata } from "~~/types/appTypes";
+import type { NftData } from "~~/types/appTypes";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_AUTH_TOKEN,
 });
 
-async function chatWithCaptain(metadata: Metadata, userMessage: string) {
+async function chatWithCaptain(metadata: NftData, userMessage: string) {
   const messages: any[] = [
     {
       role: "system",

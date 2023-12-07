@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Switchboard from "./Switchboard";
-import type { Metadata } from "~~/types/appTypes";
+import type { ApiResponses } from "~~/types/appTypes";
 
 interface PromptPanelProps {
   playHolographicDisplay: () => void;
@@ -9,40 +9,18 @@ interface PromptPanelProps {
   travelStatus: string;
   warping: boolean;
   engaged: boolean;
-  setModifiedPrompt: (modifiedPrompt: string) => void;
+  setModifiedPrompt: (modifiedPrompt: Partial<ApiResponses>) => void;
   description: string;
-  interplanetaryStatusReport: string;
   buttonMessageId: string | "";
   imageUrl: string;
   srcUrl: string;
   loading: boolean;
-  metadata: Metadata;
+  metadata: ApiResponses;
   onSubmitPrompt: (type: "character" | "background") => Promise<void>;
   onSubmit: (type: "character" | "background") => Promise<void>;
   handleButtonClick: (button: string, type: "character" | "background") => void;
   //Type '(type: "character" | "background", srcURL: string | undefined, level: string, power1: string, power2: string, power3: string, power4: string, alignment1: string, alignment2: string, selectedDescription: string, nijiFlag: boolean, vFlag: boolean, side: string) => string' is not assignable to type '() => void'.
-  generatePrompt: (
-    type: "character" | "background",
-    srcUrl: string | null,
-    level: string,
-    power1: string,
-    power2: string,
-    power3: string | "",
-    power4: string | "",
-    alignment1: string,
-    alignment2: string,
-    selectedDescription: string,
-    nijiFlag: boolean,
-    vFlag: boolean,
-    side: string | "",
-    currentEquipmentAndVehicle: string[] | null,
-    currentMissionBrief: string | null,
-    abilities: string[] | null,
-    powerLevel: number | null,
-    funFact: string | null,
-    alienMessage: string | "",
-    biometricReading?: { health: number; status: string[] } | null,
-  ) => string;
+  generatePrompt: (type: "character" | "background", metadata: ApiResponses) => string;
 }
 
 export const PromptPanel: React.FC<PromptPanelProps> = ({
@@ -57,12 +35,9 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
   imageUrl,
   srcUrl,
   metadata,
-
-  generatePrompt,
 }) => {
   const attributes = [
     "srcUrl",
-
     "Level",
     "Power1",
     "Power2",
@@ -83,7 +58,7 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
 
-  function handleModifiedPrompt(modifiedPrompt: any) {
+  function handleModifiedPrompt(modifiedPrompt: Partial<ApiResponses>) {
     //Do something with the modifiedPrompt, e.g., update the state or perform other actions
     setModifiedPrompt(modifiedPrompt);
     console.log(modifiedPrompt);
@@ -111,8 +86,8 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
               ESTABLISHED CONNECTION WITH:
               <br />
               <p className="font-bold text-2xl">
-                {metadata.Level} {metadata.Power1} {metadata.Power2} {metadata.Power3}
-                {metadata.Power4}{" "}
+                {metadata.nftData.Level} {metadata.nftData.Power1} {metadata.nftData.Power2} {metadata.nftData.Power3}
+                {metadata.nftData.Power4}{" "}
               </p>
             </h1>
 
@@ -125,9 +100,9 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
                 className="spaceship-display-screen"
               >
                 {imageUrl ? (
-                  <img src={imageUrl} className="screen-border image-display " alt="nothing" />
+                  <img src={imageUrl} className="screen-border image-display " alt="/aiu.png" />
                 ) : (
-                  <img src={srcUrl} className="image-display screen-border" alt="nothing" />
+                  <img src={srcUrl} className="image-display screen-border" alt="/aiu.png" />
                 )}
               </div>
             )}
@@ -151,7 +126,6 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
             onModifiedPrompt={handleModifiedPrompt}
             attributes={attributes}
             onToggle={handleToggle}
-            generatePrompt={generatePrompt}
             promptData={metadata}
             selectedAttributes={selectedAttributes}
           />

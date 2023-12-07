@@ -15,7 +15,7 @@ const InterGalaReportDisplay = (props: {
   const account = useGlobalState(state => state.account);
   return (
     <div
-      className="spaceship-display-screen absolute  text-center left-1/2 -ml-[4.8%] p-1 w-1/2 bottom-1/3 -mb-[2.1%]"
+      className="spaceship-display-screen absolute  text-center left-1/2 -ml-[4.8%] p-1 w-1/2 bottom-1/3 -mb-[3.1%]"
       style={{
         width: "10%",
         height: "12%",

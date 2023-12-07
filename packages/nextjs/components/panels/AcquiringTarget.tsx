@@ -22,7 +22,7 @@ const AcquiringTarget: React.FC<AcquiringTargetProps> = ({ travelStatus, selecte
 
   return (
     <>
-      <div className="tokenid-display spaceship-display-screen">
+      <div className="tokenid-display spaceship-display-screen mt-4">
         <div
           className="screen-border"
           style={{
@@ -63,14 +63,14 @@ const AcquiringTarget: React.FC<AcquiringTargetProps> = ({ travelStatus, selecte
 
       {selectedTokenId && (
         <div>
-          TRAVEL STATUw
+          TRAVEL STATUS
           <div
-            className="screen-border acquiring-target-card spaceship-display-screen"
+            className="screen-border acquiring-target-card spaceship-display-screen mt-4"
             style={{
               fontWeight: "bold",
               paddingTop: "3rem",
               marginBottom: "1rem",
-              fontSize: "1.2rem",
+              fontSize: "1.3rem",
               alignContent: "center",
               justifyContent: "center",
               paddingBottom: "3rem",

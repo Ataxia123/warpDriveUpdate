@@ -202,7 +202,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
         <div
           onMouseEnter={() => setMouseTrigger(true)}
           className="toggle-minimize-button spaceship-display-screen 
-                    opacity-90
+                    opacity-90 p-1 top-1/2 mt-24
                     "
         >
           <div onMouseEnter={onToggleMinimize} onMouseLeave={onToggleMinimize} className="spaceship-display-screen">
@@ -210,7 +210,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
               {selectedTokenId && travelStatus == "NoTarget" ? (
                 <div
                   className="description-text hex-prompt font-bold text-[1rem] 
-                                    absolute top-[10%] h-[40%] w-full p-[0.1rem] mt-[-2rem] text-white"
+                                    absolute top-[0%] h-full w-full p-[0.1rem] pt-[2rem] text-white"
                   onClick={() => {
                     playHolographicDisplay();
                     handleButton();
@@ -222,7 +222,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
                 travelStatus == "AcquiringTarget" && (
                   <div
                     className="description-text hex-prompt font-bold text-[1rem] 
-                                            absolute top-[20%] h-[30%] w-full p-[0.1rem] mt-[-2rem] text-white"
+                                            absolute top-[20%] h-full w-full p-[0.1rem] mt-[-2rem] text-white"
                     onClick={() => handleButton()}
                   >
                     READY

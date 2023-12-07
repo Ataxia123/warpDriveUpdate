@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Image from "next/image";
 import LogViewer from "./panels/LogViewer";
 import { useGlobalState } from "~~/services/store/store";
 import { trimmedPrompt } from "~~/utils/nerdUtils";
@@ -42,7 +41,7 @@ const MetadataDisplay = (props: {
           <br />
         </li>
       </ul>
-      <Image
+      <img
         height={500}
         width={500}
         alt="AIU"

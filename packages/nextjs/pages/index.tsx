@@ -209,7 +209,7 @@ export default function Home() {
     }, {});
     const ipfsGateway = "https://ipfs.io"; // Choose a gateway
     const imageUrl = metadata.image?.replace("ipfs://", `${ipfsGateway}/ipfs/`);
-
+    setImageUrl(imageUrl);
     const nftQuery = {
       Level: attributes.Level,
       Power1: attributes["Power 1"],
@@ -330,8 +330,6 @@ export default function Home() {
 
   function createTravelResult() {
     // Collect all the required information for the travel result
-    setDisplayImageUrl(imageUrl);
-    setBackgroundImageUrl(backgroundImageUrl);
 
     return;
   }
@@ -494,9 +492,11 @@ export default function Home() {
       // Set the appropriate state based on the type
       if (type === "character") {
         updateState("imageUrl", r.data.response.imageUrl);
+
+        setImageUrl(r.data.response.imageUrl);
         updateState("buttonMessageId", r.data.buttonMessageId);
       } else {
-        updateState("tempUrl", r.data.response.imageUrl);
+        setBackgroundImageUrl(backgroundImageUrl);
         updateState("buttonMessageId", r.data.buttonMessageId);
       }
     } catch (e: any) {
@@ -514,6 +514,9 @@ export default function Home() {
       updateState("loadingProgress", "TRAVELING");
     }
     updateState("waitingForWebhook", false);
+    updateState("warping", false);
+    updateState("travelStatus", "NoTarget");
+    updateState("scanning", false);
   };
 
   // handler for upscaling images

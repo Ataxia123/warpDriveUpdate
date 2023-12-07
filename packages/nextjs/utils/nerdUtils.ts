@@ -1,5 +1,4 @@
 import type { ApiResponses, ToggleOptions } from "../types/appTypes";
-import { fabric } from "fabric";
 
 export function stringToHex(str: string): string {
   let hex = "ALLIANCEOFTHEINFINITEUNIVERSE";
@@ -38,7 +37,7 @@ export async function handleReallySendTweet(selectedLog: string, selectedImage: 
 
   window.open(tweetUrl, "_blank");
 }
-
+/*
 export async function createWebcomic(
   testImageUrl: string,
   reportFrameUrl: string,
@@ -183,6 +182,7 @@ export async function createWebcomic(
     });
   });
 }
+*/
 
 export const generatePrompt = (type: "character" | "background", metadata: ApiResponses): string => {
   const niji = metadata.midjourneyConfig?.nijiFlag ? "--niji 5" : "";

@@ -691,7 +691,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-centermin-h-screen py-2">
+      <div className="flex flex-col items-center justify-centermin-h-screen">
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet" />
         <div className="container mx-auto h-screen flex flex-col items-center justify-center space-y-8">

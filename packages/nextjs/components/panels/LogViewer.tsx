@@ -54,7 +54,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ playHolographicDisplay }) => {
   }));
 
   const scan = planetData.Scan as Partial<PlanetData>;
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(-1);
   const planetOptions = [
     "locationName",
     "environmental_analysis",
@@ -69,7 +69,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ playHolographicDisplay }) => {
     if (count < planetOptions.length - 1) {
       setCount(count + 1);
     } else {
-      setCount(0);
+      setCount(-1);
     }
   };
 
@@ -85,9 +85,19 @@ const LogViewer: React.FC<LogViewerProps> = ({ playHolographicDisplay }) => {
             index();
           }}
         >
-          Scan: <br />
           <span className="text-white text-2xl">{planetOptions[count]} </span> <br />
           <div className="text-lg">
+            {count == -1 && (
+              <ul>
+                <> LOCATION DATA</>
+
+                <li>
+                  SCANNER RESULTS
+                  <br />
+                  <span className="text-white font-bold p-3"></span>
+                </li>
+              </ul>
+            )}
             {planetData.Scan && JSON.stringify(scan[planetOptions[count] as keyof PlanetData])}
           </div>
         </div>

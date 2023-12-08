@@ -1,10 +1,9 @@
 import { FunctionComponent, useEffect, useState } from "react";
 import IntergalacticReportDisplay from "./IntergalacticReportDisplay";
 import MetadataDisplay from "./MetadataDisplay";
-import { ToastBar, Toaster, toast } from "react-hot-toast";
 import { useGlobalState, useImageStore } from "~~/services/store/store";
 import type { ApiResponses } from "~~/types/appTypes";
-import { stringToHex, trimmedPrompt } from "~~/utils/nerdUtils";
+import { stringToHex } from "~~/utils/nerdUtils";
 
 interface ReadAIUProps {
   warping: boolean;
@@ -25,7 +24,6 @@ interface ReadAIUProps {
   onMetadataReceived: (metadata: ApiResponses) => void;
   onImageSrcReceived: (imageSrc: string) => void;
   onTokenIdsReceived: (tokenIds: string[]) => void;
-  isFocused: boolean; // Add this prop
   isMinimized: boolean; // Add this prop
   onToggleMinimize: () => void; // Add this prop
   onSubmit: (type: "character" | "background") => Promise<void>;
@@ -33,8 +31,6 @@ interface ReadAIUProps {
 }
 
 export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
-  warping,
-  playSpaceshipOn,
   playWarpSpeed,
   playHolographicDisplay,
   playSpaceshipHum,
@@ -42,24 +38,16 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
   scanning,
   handleButtonClick,
   buttonMessageId,
-  engaged: engagedProp,
-  modifiedPrompt,
 
   setTravelStatus,
-  handleEngaged,
   travelStatus,
   onSubmit,
   onSelectedTokenIdRecieved,
-  onMetadataReceived,
-  onImageSrcReceived,
-  isFocused, // Destructure the isMinimized prop
   isMinimized,
   onToggleMinimize, // Destructure the onToggleMinimize prop
 }) => {
   const tokenIds = useGlobalState(state => state.tokenIds);
   const [selectedTokenId, setSelectedTokenId] = useState<string>();
-  const [metadata, setMetadata] = useState<any>(null);
-  const [imageSrc, setImageSrc] = useState<string>();
   const [mouseTrigger, setMouseTrigger] = useState<boolean>(false);
   const [engaged, setEngaged] = useState<boolean>(true);
   const scannerOptions = ["abilities", "currentEquipmentAndVehicle", "funFact", "powerLevel", "currentMissionBrief"];
@@ -73,11 +61,10 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
     displayImageUrl: state.displayImageUrl,
   }));
 
-  const handleTokenIdChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleTokenIdChange = (e: string) => {
+    setSelectedTokenId(e);
     playHolographicDisplay();
-    setSelectedTokenId(e.target.value);
-    playSpaceshipOn();
-    onSelectedTokenIdRecieved(e.target.value); // Add this line
+    onSelectedTokenIdRecieved(e || ""); // Add this line
   };
 
   //the important function
@@ -210,7 +197,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
               {selectedTokenId && travelStatus == "NoTarget" ? (
                 <div
                   className="description-text hex-prompt font-bold text-[1rem] 
-                                    absolute top-[0%] h-full w-full p-[0.1rem] pt-[2rem] text-white"
+                                    absolute top-[0%] h-[60%] w-full p-[0.1rem] pt-[2rem] text-white"
                   onClick={() => {
                     playHolographicDisplay();
                     handleButton();
@@ -222,7 +209,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
                 travelStatus == "AcquiringTarget" && (
                   <div
                     className="description-text hex-prompt font-bold text-[1rem] 
-                                            absolute top-[20%] h-full w-full p-[0.1rem] mt-[-2rem] text-white"
+                                    absolute top-[0%] h-[60%] w-full p-[0.1rem] pt-[2rem] text-white"
                     onClick={() => handleButton()}
                   >
                     READY
@@ -232,23 +219,24 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
               {!selectedTokenId && (
                 <div
                   className="description-text hex-prompt font-bold text-[1rem] 
-                                    absolute top-[20%] h-[30%] w-full  mt-[-2rem] text-white"
+                                    absolute top-[0%] h-full w-full  mt-[-2rem] text-white"
                 >
                   SELECT ID
                 </div>
               )}
               <br />
               <select
-                id="tokenId"
+                id="tokenIdSelector"
                 value={selectedTokenId}
-                onChange={handleTokenIdChange}
-                className="dropdown-container hex-prompt dropdown-option text-green content-center pl-1 top-[70%]"
+                onChange={e => handleTokenIdChange(e.target.value)}
+                className="dropdown-container hex-prompt 
+                                dropdown-option text-green content-center pl-3 top-[80%]"
               >
-                <option value="dropdown-option bg-color-black">-ID-</option>
-                {tokenIds?.map(tokenId => (
+                <option>ID</option>
+
+                {tokenIds.map(tokenId => (
                   <option
                     key={tokenId}
-                    value={tokenId}
                     className="dropdown-option hex-prompt 
                                         dropdown-option  content-center"
                   >
@@ -264,7 +252,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
                   handleButton();
                 }}
               >
-                {stringToHex(metadata ? metadata.description : "No Metadata")}
+                {stringToHex(parsedMetadata ? JSON.stringify(parsedMetadata.nftData) : "No Metadata")}
               </button>
             </div>
           </div>
@@ -287,17 +275,6 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
             scannerOptions={scannerOptions}
             imageState={imageState}
           />
-          {/*
-    
-
-      <ScannerOutput 
-        scanOutputIndex={scanOutputIndex} 
-        scannerOptions={scannerOptions} 
-        scannerOutput={scannerOutput} 
-        handlePrevious={handlePrevious} 
-        handleNext={handleNext}
-      />
-  ... [rest of your main component logic, like image display] ... */}
         </div>
       </div>
     </>

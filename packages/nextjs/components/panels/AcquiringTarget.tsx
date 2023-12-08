@@ -6,7 +6,7 @@ interface AcquiringTargetProps {
   loading: boolean;
 }
 
-const AcquiringTarget: React.FC<AcquiringTargetProps> = ({ travelStatus, selectedTokenId, loading }) => {
+const AcquiringTarget: React.FC<AcquiringTargetProps> = ({ travelStatus, selectedTokenId }) => {
   const getColor = () => {
     switch (travelStatus) {
       case "NoTarget":
@@ -53,7 +53,7 @@ const AcquiringTarget: React.FC<AcquiringTargetProps> = ({ travelStatus, selecte
               <div>
                 <p style={{ alignContent: "right", color: "white", fontSize: "0.8rem", fontWeight: "bold", margin: 0 }}>
                   {" "}
-                  -|&nbsp;{2}&nbsp;|-
+                  -|&nbsp;{4}&nbsp;|-
                 </p>
               </div>
             </div>
@@ -65,7 +65,8 @@ const AcquiringTarget: React.FC<AcquiringTargetProps> = ({ travelStatus, selecte
         <div>
           TRAVEL STATUS
           <div
-            className="screen-border acquiring-target-card spaceship-display-screen mt-4"
+            className="screen-border acquiring-target-card 
+                        spaceship-display-screen mt-4"
             style={{
               fontWeight: "bold",
               paddingTop: "3rem",

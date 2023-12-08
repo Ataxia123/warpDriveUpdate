@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Switchboard from "./Switchboard";
 import type { ApiResponses } from "~~/types/appTypes";
+import { generatePrompt } from "~~/utils/nerdUtils";
 
 interface PromptPanelProps {
   playHolographicDisplay: () => void;
@@ -20,7 +21,6 @@ interface PromptPanelProps {
   onSubmit: (type: "character" | "background") => Promise<void>;
   handleButtonClick: (button: string, type: "character" | "background") => void;
   //Type '(type: "character" | "background", srcURL: string | undefined, level: string, power1: string, power2: string, power3: string, power4: string, alignment1: string, alignment2: string, selectedDescription: string, nijiFlag: boolean, vFlag: boolean, side: string) => string' is not assignable to type '() => void'.
-  generatePrompt: (type: "character" | "background", metadata: ApiResponses) => string;
 }
 
 export const PromptPanel: React.FC<PromptPanelProps> = ({

@@ -7,18 +7,24 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_AUTH_TOKEN,
 });
 
-async function generateAlienLanguage(metaScanData: MetaScanData, nftData: NftData) {
+async function generateAlienLanguage(metaScanData: MetaScanData, address: string, planetData: PlanetData) {
   const messages: any[] = [
     {
       role: "system",
       content: `"You are the targetting computer of a ship in 
             the Alliance of the Infinite Universe. 
-            You have just recieved a transmission from the following coordinates:
-            ${metaScanData.currentLocation}.
-            You need to need to triangulate the following information and issue a report 
-            scan  with the following fields: 
-         {
-            locationCoordinates: ${metaScanData.currentLocation}.
+            You have established an uplink with an AIU operator.
+
+           If coordinates or the metaScanData is missing 
+            describe the subquadrant of the sector 
+            that the target is in.
+
+
+            You need to need to triangulate their location and provide the following report.
+
+       {
+            SectorId: string;
+            locationCoordinates: {x:number,y:number,z:number}.
             planetId: string;
             Scan: {
             locationName: string,
@@ -29,24 +35,33 @@ async function generateAlienLanguage(metaScanData: MetaScanData, nftData: NftDat
             DescriptiveText: string,
             controlledBy: boolean | null;
             },
-        };
-        Use the Message information to come up with the report  in JSON format using your creativity."`,
+
+
+
+        Use the Message information to come up with the report in JSON format using your creativity."`,
+    },
+    {
+      role: "assistant",
+      content: `MetaScanning:${JSON.stringify(metaScanData)}
+            previousLocation: ${JSON.stringify(planetData)}
+        Coordinates: ${planetData.locationCoordinates}.
+
+`,
     },
     {
       role: "user",
-      content: `"Incoming Transmissiong from
-        ${nftData.Level} ${nftData.Power1} ${nftData.Power2} ${nftData.Power3}.
-        MetaScanning:
-        ${JSON.stringify(metaScanData)} 
-        Results Recieved. 
-        Begin scanning target location."`,
+      content: `"Incoming Transmissiong from AIU Operator.
+   
+                CREDENTIALS VALIDATED ${address}
+                Begin triangulating target location."`,
     },
   ];
 
   const stream = await openai.chat.completions.create({
-    model: "gpt-4-1106-preview",
+    model: "gpt-3.5-turbo-1106",
     messages: messages,
     response_format: { type: "json_object" },
+    temperature: 1.5,
   });
 
   const rawOutput = stream.choices[0].message.content;
@@ -56,9 +71,9 @@ async function generateAlienLanguage(metaScanData: MetaScanData, nftData: NftDat
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
-    const { metaScanData, nftData } = req.body;
+    const { metaScanData, address, planetData } = req.body;
     try {
-      const alienMessage = await generateAlienLanguage(metaScanData, nftData);
+      const alienMessage = await generateAlienLanguage(metaScanData, address, planetData);
 
       res.status(200).json({ alienMessage });
     } catch (error) {

@@ -82,16 +82,15 @@ export const useGlobalState = create<GlobalState>(set => ({
   targetNetwork: scaffoldConfig.targetNetworks[0],
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => set(() => ({ targetNetwork: newTargetNetwork })),
   nftData: {} as NftData,
-  setNftData: (nftData: NftData) => set(state => ({ nftData: { ...state.nftData, ...nftData } })),
+  setNftData: (nftData: NftData) => set(() => ({ nftData: nftData })),
   metaScanData: {} as MetaScanData,
-  setMetaScanData: (metaScanData: MetaScanData) =>
-    set(state => ({ metaScanData: { ...state.metaScanData, ...metaScanData } })),
+  setMetaScanData: (metaScanData: MetaScanData) => set(() => ({ metaScanData: metaScanData })),
   planetData: {} as PlanetData,
-  setPlanetData: (planetData: PlanetData) => set(state => ({ planetData: { ...state.planetData, ...planetData } })),
+  setPlanetData: (planetData: PlanetData) => set(() => ({ planetData: planetData })),
   interPlanetaryStatusReport: {} as InterPlanetaryStatusReport,
   setInterPlanetaryStatusReport: (interPlanetaryStatusReport: InterPlanetaryStatusReport) =>
-    set(state => ({
-      interPlanetaryStatusReport: { ...state.interPlanetaryStatusReport, ...interPlanetaryStatusReport },
+    set(() => ({
+      interPlanetaryStatusReport: interPlanetaryStatusReport,
     })),
   midjourneyConfig: {} as MidjourneyConfig,
   setMidjourneyConfig: (midjourneyConfig: Partial<MidjourneyConfig>) =>

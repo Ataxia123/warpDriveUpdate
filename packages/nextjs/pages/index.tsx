@@ -12,21 +12,18 @@ import axios from "axios";
 import { ethers } from "ethers";
 import GraphemeSplitter from "grapheme-splitter";
 import { toast } from "react-hot-toast";
-import { useAccount, useContractEvent, useContractRead, usePublicClient } from "wagmi";
+import { useAccount } from "wagmi";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { useScaffoldEventHistory } from "~~/hooks/scaffold-eth/useScaffoldEventHistory";
 import type {
   ApiResponses,
   ChatData,
-  InterPlanetaryStatusReport,
   MetaScanData,
-  MidjourneyConfig,
   NftData,
   PlanetData,
   ProgressResponseType,
   Response,
   Sounds,
-  StoreState,
 } from "~~/types/appTypes";
 import { generatePrompt } from "~~/utils/nerdUtils";
 import { useEthersProvider } from "~~/utils/wagmi-utils";
@@ -68,11 +65,6 @@ export default function Home() {
     scanning,
   } = appState;
   //session storage
-  const [storeState, setStoreState] = useState<StoreState>({
-    interplanetaryStatusReports: [],
-    scanningResults: [],
-    imagesStored: [],
-  });
 
   const { address } = useAccount();
   const { data: transferEvents } = useScaffoldEventHistory({
@@ -94,7 +86,6 @@ export default function Home() {
 
   const imgStore = useImageStore(state => state);
   const {
-    setSrcUrl,
     setImageUrl,
     imageUrl,
     setBackgroundImageUrl,
@@ -102,32 +93,28 @@ export default function Home() {
     resetImages,
   } = imgStore;
 
-  const tokenIds = useAppStore(state => state.tokenIds);
   const reset = useAppStore(state => state.reset);
-  const setTravels = useAppStore(state => state.setTravels);
-  const setMetadata = useAppStore(state => state.setApiResponses);
   const setNftData = useAppStore(state => state.setNftData);
   const setPlanetData = useAppStore(state => state.setPlanetData);
   const setMetaScanData = useAppStore(state => state.setMetaScanData);
   const setTokenIds = useAppStore(state => state.setTokenIds);
   const setInterplanetaryStatusReport = useAppStore(state => state.setInterPlanetaryStatusReport);
+  const setMidjourneyConfig = useAppStore(state => state.setMidjourneyConfig);
   const midjourneyConfig = useAppStore(state => state.midjourneyConfig);
   const metaScanData = useAppStore(state => state.metaScanData);
   const interplanetaryStatusReport = useAppStore(state => state.interPlanetaryStatusReport);
   const planetData = useAppStore(state => state.planetData);
   const nftData = useAppStore(state => state.nftData);
-  const setMidJourneyConfig = useAppStore(state => state.setMidjourneyConfig);
   const travels = useAppStore(state => state.travels);
   const [sounds, setSounds] = useState<Sounds>({});
   const [audioController, setAudioController] = useState<AudioController | null>(null);
   const [soundsLoaded, setSoundsLoaded] = useState<boolean>(false);
 
-  const [balance, setBalance] = useState<bigint>(BigInt(0));
   const [tokenURI, setTokenURI] = useState<string>();
   const updateState = (key: string, value: any) => {
     setAppState(prevState => ({ ...prevState, [key]: value }));
   };
-
+  const [toggle, setToggle] = useState(false);
   const fetchUserBalance = async (address: string, contract: any) => {
     if (!address || !contract) return BigInt(0);
     try {
@@ -143,41 +130,28 @@ export default function Home() {
     return transferEvents.map(event => event.args.tokenId.toString());
   };
 
-  const updateAppState = (userBalance: bigint, ownedTokenIds: string[]) => {
-    setBalance(userBalance);
+  const fetchMetadata = async (tokenId: string) => {
+    if (!address || !deployedContract || !tokenId) return;
+    try {
+      if (!contractInstance) return;
+      const uri = await contractInstance.tokenURI(tokenId);
+      const response = await fetch(uri);
+      const json = await response.json();
+      setTokenURI(json);
+      console.log(uri, json);
+      handleMetadataReceived(json);
+    } catch (error) {
+      console.error("Error fetching token URI:", error);
+    }
+  };
+
+  const updateAppState = (ownedTokenIds: string[]) => {
     setTokenIds(ownedTokenIds);
   };
 
   const resetAppState = () => {
     reset();
     resetImages();
-  };
-  const fetchMetadata = async () => {
-    if (!tokenURI) return;
-
-    try {
-      const response = await fetch(tokenURI);
-      const json = await response.json();
-
-      console.log("NFT DATA", json);
-      handleMetadataReceived(json);
-    } catch (error) {
-      console.error("Error fetching metadata:", error);
-    }
-  };
-
-  const fetchTokenURI = async () => {
-    if (!address || !deployedContract || !selectedTokenId) return;
-    resetAppState();
-    try {
-      if (!contractInstance) return;
-
-      const uri = await contractInstance.tokenURI(selectedTokenId);
-      setTokenURI(uri);
-      console.log(uri);
-    } catch (error) {
-      console.error("Error fetching token URI:", error);
-    }
   };
 
   const fetchTokenIds = async () => {
@@ -192,7 +166,7 @@ export default function Home() {
       const userBalance = await fetchUserBalance(address, contractInstance);
       const ownedTokenIds = fetchOwnedTokenIds(transferEvents);
 
-      userBalance >= BigInt(0) ? updateAppState(userBalance, ownedTokenIds) : resetAppState();
+      userBalance >= BigInt(0) ? updateAppState(ownedTokenIds) : resetAppState();
       console.log("tokenIds", ownedTokenIds, "userBalance", userBalance);
     } catch (error) {
       console.error("Error in fetchTokenIds:", error);
@@ -203,15 +177,16 @@ export default function Home() {
   const handleMetadataReceived = (metadata: any) => {
     console.log("Metadata received in the parent component:", metadata);
     // Extract the attributes from the metadata
-    const attributes = metadata.attributes.reduce((acc: any, attr: any) => {
+    const attributes = metadata?.attributes.reduce((acc: any, attr: any) => {
       acc[attr.trait_type] = attr.value;
       return acc;
     }, {});
     const ipfsGateway = "https://ipfs.io"; // Choose a gateway
-    const imageUrl = metadata.image?.replace("ipfs://", `${ipfsGateway}/ipfs/`);
-    setImageUrl(imageUrl);
+    const imageUrl = metadata?.image.replace("ipfs://", `${ipfsGateway}/ipfs/`);
+    console.log("attributes", metadata);
+    if (!attributes) return;
     const nftQuery = {
-      Level: attributes.Level,
+      Level: attributes?.Level,
       Power1: attributes["Power 1"],
       Power2: attributes["Power 2"],
       Power3: attributes["Power 3"],
@@ -220,21 +195,38 @@ export default function Home() {
       Alignment2: attributes["Alignment 2"],
       Side: attributes.Side,
     };
+
     setNftData(nftQuery);
-    generateMetadata(nftQuery);
     toast.success(`
                 INCOMING TRANSMISSION\n
             Established connection with:\n
             ${nftQuery.Level} ${nftQuery.Power1} ${nftQuery.Power2}\n
             Agent #${selectedTokenId} of the A.I.U.
            `);
+
+    setImageUrl(imageUrl);
+    setMidjourneyConfig({ url: imageUrl });
   };
 
   useEffect(() => {
-    fetchMetadata();
-  }, [tokenURI]);
+    if (address && toggle!) {
+      fetchTargetPlanet();
+      setToggle(true);
+
+      console.log("toggled", toggle);
+    } else return;
+    console.log("toggle", toggle);
+  }, [address]);
+
   useEffect(() => {
-    fetchTokenURI();
+    if (Number(selectedTokenId) > 0 && !metaScanData.currentLocation?.x) {
+      fetchScanningReport(nftData);
+      console.log("selectedTokenId", selectedTokenId);
+    }
+  }, [nftData, selectedTokenId]);
+
+  useEffect(() => {
+    fetchMetadata(selectedTokenId);
   }, [address, selectedTokenId]);
   // Inside your component
   useEffect(() => {
@@ -347,48 +339,43 @@ export default function Home() {
     reset();
     resetImages();
   };
+  /*
+        const generateMetadata = async (n: NftData) => {
+            if (isNaN(count)) {
+                count = 0;
+                await                 .then(async e => {
+                    count++;
 
-  const generateMetadata = async (n: NftData) => {
-    if (isNaN(count)) {
-      count = 0;
-      await fetchScanningReport(n)
-        .then(async e => {
-          count++;
-          toast.success(
-            `
-                    AGENT LOCATION: ${JSON.stringify(e.currentLocation)}\n
-                    Current Mission Brief: ${JSON.stringify(e.currentMissionBrief)}\n
-                    RESULT SENT TO BACKEND"`,
-          );
-          await fetchTargetPlanet(e).then(async r => {
-            count++;
-            toast.success(`PLANET ID: ${r.planetId}\n
-                                           LocationName: ${r.Scan.locationName}\n
-                                           EnvScan: ${r.Scan.environmental_analysis}`);
-            await fetchInterplanetaryStatusReport(r);
-          });
-        })
-        .catch((err: any) => {
-          console.log("ERROR", err);
-          return (count = NaN);
-        });
-    } else {
-      toast.error("fetching error");
-      console.log("count", count, selectedTokenId);
-      return;
-    }
-  };
-
+                                       });
+                })
+                    .catch((err: any) => {
+                        console.log("ERROR", err);
+                        return (count = NaN);
+                    });
+            } else {
+                toast.error("fetching error");
+                console.log("count", count, selectedTokenId);
+                return;
+            }
+        };
+    */
   // TRAVEL HANDLER
   const fetchScanningReport = async (nftQuery: NftData) => {
     try {
       const response = await axios.post("/api/scanning_result", {
         metadata: nftQuery,
       });
-      updateState("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
+
       console.log("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
       const r = JSON.parse(response.data.scannerOutput.rawOutput);
       setMetaScanData(r);
+      toast.success(
+        `
+                        AGENT LOCATION: ${JSON.stringify(r.currentLocation)}\n
+                        Current Mission Brief: ${JSON.stringify(r.currentMissionBrief)}\n
+                        RESULT SENT TO BACKEND"`,
+      );
+      updateState("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
       return r;
     } catch (error) {
       console.error("Error fetching scanning report:", error);
@@ -419,17 +406,20 @@ export default function Home() {
     }
   };
 
-  const fetchTargetPlanet = async (r: MetaScanData) => {
+  const fetchTargetPlanet = async () => {
     try {
       const response = await axios.post("/api/alienEncoder", {
-        metaScanData: r,
-        nftData: nftData,
+        metaScanData,
+        address,
+        planetData,
       });
       const s = JSON.parse(response.data.alienMessage);
+      travels.push(s);
       setPlanetData(s);
+      toast.success(`SectorId: ${s.SectorId}\n
+                        LocationName: ${s.Scan.locationName}\n
+                        EnvScan: ${s.Scan.environmental_analysis}`);
       return s;
-
-      console.log("fetchTargetPlanet", s);
     } catch (error) {
       console.error("Error fetching target planet:", error);
     }
@@ -468,7 +458,7 @@ export default function Home() {
 
   // handler for Generating images
   const submitPrompt = async (type: "character" | "background") => {
-    let prompt = generatePrompt(type, metadata);
+    let prompt = generatePrompt(type, metadata, imgStore);
 
     if (waitingForWebhook) {
       console.log("Already waiting for webhook, please wait for response.");
@@ -483,9 +473,7 @@ export default function Home() {
     }
 
     try {
-      const r = await axios.post("/api/apiHandler", {
-        prompt,
-      });
+      const r = await axios.post("/api/apiHandler", { prompt: prompt });
 
       console.log("response", r);
       updateState("response", r.data.response);
@@ -631,7 +619,7 @@ export default function Home() {
     updateState("selectedTokenId", selectedTokenId);
   };
   const handleTokenIdsReceived = (tokenIds: string[]) => {
-    // Handle the token IDs here, e.g., update the state or call another function
+    toast.success(`AI-U TOKEN IDS RECIEVED\n`);
   };
 
   const handleScanning = (scanning: boolean) => {
@@ -657,7 +645,7 @@ export default function Home() {
       console.log("Already waiting for webhook, please wait for response.");
       return;
     }
-
+    fetchInterplanetaryStatusReport(planetData);
     updateState("waitingForWebhook", true);
 
     const url = scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl;
@@ -738,9 +726,7 @@ export default function Home() {
             <DescriptionPanel
               alienMessage={planetData}
               playHolographicDisplay={playHolographicDisplay}
-              handleClearAppState={handleClearAppState}
               handleActiveState={handleActiveSate}
-              storeState={storeState}
               handleSubmit={submitPrompt}
               scanning={scanning}
               handleScanning={handleScanning}
@@ -767,7 +753,6 @@ export default function Home() {
               loading={loading}
               metadata={metadata}
               buttonMessageId={buttonMessageId}
-              generatePrompt={generatePrompt}
             />
             <div></div>
           </Dashboard>

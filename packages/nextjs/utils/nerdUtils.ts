@@ -1,8 +1,8 @@
-import type { ApiResponses, ToggleOptions } from "../types/appTypes";
+import type { ApiResponses } from "../types/appTypes";
 
 export function stringToHex(str: string): string {
   let hex = "ALLIANCEOFTHEINFINITEUNIVERSE";
-  for (let i = 0; i < str.length; i++) {
+  for (let i = 0; i < str?.length; i++) {
     hex += str.charCodeAt(i).toString(16);
   }
   return hex;
@@ -184,7 +184,7 @@ export async function createWebcomic(
 }
 */
 
-export const generatePrompt = (type: "character" | "background", metadata: ApiResponses): string => {
+export const generatePrompt = (type: "character" | "background", metadata: ApiResponses, imageData: any): string => {
   const niji = metadata.midjourneyConfig?.nijiFlag ? "--niji 5" : "";
   const v = metadata.midjourneyConfig?.vFlag ? "--v 5" : "";
   const keyword = type === "background" ? "The Planet Of" : "A portrait of";
@@ -200,6 +200,7 @@ export const generatePrompt = (type: "character" | "background", metadata: ApiRe
   } = metadata.nftData || {};
   const { currentEquipmentAndVehicle, currentMissionBrief, abilities, powerLevel, funFact, biometricReading } =
     metadata.metaScanData || {};
+  const { imageUrl } = imageData;
   const { url: srcUrl, selectedDescription } = metadata.midjourneyConfig || {};
   const { locationCoordinates, Scan } = metadata.planetData || {};
   const randomPlanet =
@@ -210,28 +211,16 @@ export const generatePrompt = (type: "character" | "background", metadata: ApiRe
                     ${JSON.stringify(Scan)} ${JSON.stringify(locationCoordinates)}
                     ${niji} ${v} viewed from space`.trim();
 
-  result = `${srcUrl}  ${keyword}  ${level} ${power1} 
+  result = `${imageUrl} ${keyword}  ${level} ${power1} 
                 ${power2} ${power3} ${power4} ${currentMissionBrief} 
                 Power Level: ${powerLevel}${biometricReading?.health} 
                 ${currentEquipmentAndVehicle} ${abilities} ${funFact} 
                 ${alignment1} ${alignment2} ${side} ${selectedDescription} 
-                ${niji} ${v}`.trim();
+                ${niji} ${v}`;
+
   result = result.replace(/undefined/g, "");
   // Truncate if length exceeds 14,000 characters
-  if (result.length > 14000) {
-    result = result.substring(0, 14000);
-  }
 
   return result;
 };
-export const trimmedPrompt = (prompt: string): string => {
-  // Initial cleanup to remove 'undefined'
-
-  let result = prompt.replace(/undefined/g, "");
-  // Truncate if length exceeds 14,000 characters
-  if (result.length > 14000) {
-    result = result.substring(0, 14000);
-  }
-
-  return result;
-};
+// Initial cleanup to remove 'undefined'

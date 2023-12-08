@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import ReadAIU from "../ReadAIU";
-import type { ApiResponses } from "~~/types/appTypes";
 
 interface TokenSelectionPanelProps {
   warping: boolean;
@@ -54,7 +53,6 @@ const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
   onSubmit,
   travelStatus,
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
   const handleClick = () => {
@@ -88,7 +86,6 @@ const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
         onImageSrcReceived={onImageSrcReceived}
         onTokenIdsReceived={onTokenIdsReceived}
         onSelectedTokenIdRecieved={onSelectedTokenIdRecieved}
-        isFocused={isFocused} // Pass isMinimized as a prop
         onToggleMinimize={handleClick} // Pass handleClick as a prop
         onSubmit={onSubmit}
       />

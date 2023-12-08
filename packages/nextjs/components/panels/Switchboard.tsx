@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useImageStore } from "~~/services/store/store";
 import type { ApiResponses, ToggleOptions } from "~~/types/appTypes";
-import { generatePrompt, stringToHex, trimmedPrompt } from "~~/utils/nerdUtils";
+import { generatePrompt, stringToHex } from "~~/utils/nerdUtils";
 
 interface SwitchboardProps {
   description: string;
@@ -27,6 +28,7 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
   promptData,
 }) => {
   const [modifiedPrompt, setModifiedPrompt] = useState("ALLIANCEOFTHEINFINITEUNIVERSE");
+  const imageState = useImageStore(state => state);
 
   // set string state to be either "character" or "background enforcing type
   const [type, setType] = useState<"character" | "background">("character");
@@ -56,9 +58,9 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
   const generateModifiedPrompt = () => {
     const promptType = scanning ? "background" : "character";
 
-    const response = generatePrompt(promptType, promptData);
+    const response = generatePrompt(promptType, promptData, imageState);
     // Use the toggleOptions to filter the promptData
-    const newPrompt = trimmedPrompt(response);
+    const newPrompt = response.replace(/undefined/g, "");
     // Generate the prompt using the filtered data
     // Update the modifiedPrompt state
     setModifiedPrompt(newPrompt);

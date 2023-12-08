@@ -98,7 +98,8 @@ const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus })
           style={{
             background: "transparent",
             zIndex: -2,
-
+            left: "0",
+            right: "70.3%",
             transform:
               "perspective(1000px) rotateZ(20deg) rotateX(40deg) rotateY(-20deg) translateX(-5%) skewX(-10deg) translateY(25%) scale(1.5)",
           }}

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import LogViewer from "./panels/LogViewer";
 import { useGlobalState } from "~~/services/store/store";
-import { trimmedPrompt } from "~~/utils/nerdUtils";
 
 const MetadataDisplay = (props: {
   scannerOutput: any;
@@ -27,7 +26,7 @@ const MetadataDisplay = (props: {
     `${parsedMetadata.Level} ${parsedMetadata.Power1} ${parsedMetadata.Power2} ${parsedMetadata.Power3}`,
   );
 
-  const trimmedName = trimmedPrompt(heroName);
+  const trimmedName = heroName.replace(/undefined/g, "");
 
   return (
     <div className="absolute spaceship-display-screen left-5 top-1/4 h-full w-full p-3 text-center screen-border">

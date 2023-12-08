@@ -1,21 +1,12 @@
-import React, { useEffect, useState } from "react";
-import LogViewer from "./LogViewer";
+import React, { useState } from "react";
 import { useGlobalState } from "~~/services/store/store";
-import type { ApiResponses, InterPlanetaryStatusReport, PlanetData } from "~~/types/appTypes";
-
-interface StoreState {
-  interplanetaryStatusReports: string[];
-  scanningResults: string[][];
-  imagesStored: string[];
-}
+import type { InterPlanetaryStatusReport, PlanetData } from "~~/types/appTypes";
 
 interface DescriptionPanelProps {
   alienMessage: PlanetData;
   playHolographicDisplay: () => void;
-  handleClearAppState: () => void;
   handleActiveState: (imageUrl: string, selectedDescription: string, interplanetaryStatusReport: string) => void;
 
-  storeState: StoreState;
   scanning: boolean;
   handleScanning: (scanning: boolean) => void;
   travelStatus: string;
@@ -30,22 +21,16 @@ interface DescriptionPanelProps {
 export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
   alienMessage,
   playHolographicDisplay,
-  handleClearAppState,
-  handleActiveState,
   handleSubmit,
   scanning,
   handleScanning,
   travelStatus,
   description,
-
   handleDescribeClick,
-  onDescriptionIndexChange,
   selectedTokenId,
-  storeState,
 }) => {
-  const [focused, setFocused] = useState(false);
+  const [focused, setFocused] = useState(true);
 
-  const [waitingForDescription, setWaitingForDescription] = useState<boolean>(false);
   const [toggle, setToggle] = useState<boolean>(false);
 
   const handleClick = () => {
@@ -66,7 +51,13 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
     handleSubmit("background");
     setToggle(!toggle);
   };
-  const interplanetaryStatusReport = useGlobalState(state => state.interPlanetaryStatusReport);
+  const ipr = useGlobalState(state => state.interPlanetaryStatusReport);
+  const planetData = useGlobalState(state => state.planetData);
+  const metaScan = useGlobalState(state => state.metaScanData);
+  const nftData = useGlobalState(state => state.nftData);
+  const heroName = JSON.stringify(
+    `${nftData.Level} ${nftData.Power1} ${nftData.Power2} ${nftData.Power3} ${nftData.Power3}`,
+  ).replace(/undefined/g, "");
   const ipsrOptions = [
     "missionId",
     "location",
@@ -79,23 +70,23 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
     "narrative",
   ];
 
-  const [count, setCount] = useState(-1);
+  const [count, setCount] = useState(0);
   const index = () => {
     playHolographicDisplay();
     if (count < ipsrOptions.length - 1) {
       setCount(count + 1);
     } else {
-      setCount(-1);
+      setCount(0);
     }
   };
   return (
     <div
       className={`${
         focused ? "focused-right spaceship-display-screen" : "unfocused-right scale-100 spaceship-display-screen"
-      }  spaceship-panel screen-border `}
+      }  spaceship-panel screen-border`}
       style={{
         transition: "all 0.5s ease-in-out",
-        padding: "0.2rem",
+        padding: "0.4rem",
         height: "50%",
         width: "23%",
         left: "70%",
@@ -110,22 +101,12 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
           height: "80%",
           width: "100%",
           objectFit: "fill",
-          left: "4%",
+          left: "8%",
           padding: "5.5rem",
         }}
         src="aiu.png"
       ></img>
-      <div
-        className="spaceship-display-screen description-text"
-        style={{
-          display: "flex",
-          alignContent: "center",
-          flexDirection: "column",
-
-          padding: "0.4rem",
-          overflowX: "hidden",
-        }}
-      >
+      <div className="spaceship-display-screen description-text flex-col-center p-2 pl-5" style={{}}>
         <p
           className=""
           style={{
@@ -139,59 +120,69 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
           style={{
             color: "white",
             scale: "1",
-            marginTop: "0%",
+            marginTop: "-2%",
             marginBottom: "-5%",
           }}
         >
-          {" "}
           INTERGALACTIC SCANNER
         </p>
         <br />
         <>
-          {interplanetaryStatusReport.missionId! && <>TARGETING SYSTEM NOT ENGAGED</>}
+          <div className="absolute text-left h-full w-full top-[12%] description-text">
+            <div
+              className="screen-border relative  cursor-pointer"
+              style={{
+                height: "50%",
+                paddingLeft: "3rem",
+                top: "2%",
+                bottom: "20%",
+                width: "100%",
+                left: "0%",
+                justifyContent: "left",
+                scale: "1.1",
+              }}
+              onClick={e => {
+                e.stopPropagation();
+                index();
+              }}
+            >
+              <>
+                {heroName.length > 10 && (
+                  <span className=" relative -left-[12%] text-sm">
+                    TRANSMISSION FROM <br /> <span className="text-sm text-white">{heroName}</span>
+                  </span>
+                )}
 
-          {interplanetaryStatusReport.missionId ? ( //wip
-            <>
-              <p
-                className="description-text"
-                style={{
-                  top: "20%",
-                  position: "absolute",
-                }}
-              >
-                {" "}
-                INCOMING TRANSMISSION:
-                <br />
-              </p>
-              <div
-                className="screen-border"
-                style={{
-                  overflow: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  position: "relative",
-                  height: "45%",
-                  padding: "15px",
-                  paddingLeft: "3rem",
-                  marginBottom: "-6rem",
-                  top: "8%",
-                  bottom: "20%",
-                  width: "110%",
-                  left: "0%",
-                  justifyContent: "right",
-                  scale: "1.1",
-                }}
-                onClick={e => {
-                  e.stopPropagation();
-                  index();
-                }}
-              >
-                <span className="text-white text-2xl">{ipsrOptions[count]} </span> <br />
-                <div className="text-lg pr-4">
-                  {interplanetaryStatusReport &&
-                    JSON.stringify(interplanetaryStatusReport[ipsrOptions[count] as keyof InterPlanetaryStatusReport])}
-                </div>
-                <div className="text-sm">{}</div>
+                <span className="text-left text-sm relative top-[0%] -left-[12%] overflow-y-auto overflow-x-hidden p-2">
+                  MISSION CHECKLIST
+                  <li className={`${!planetData.planetId ? "text-red-500" : "text-green-500"}`}>
+                    PLANET COORDINATES
+                    <br />
+                  </li>
+                  <li className={`${!metaScan.currentLocation?.x ? "text-red-500" : "text-green-500"}`}>
+                    AI-U AGENT STATUS
+                    <br />
+                  </li>
+                  <li className={`${ipr.missionId !== "" ? "text-red-500" : "text-green-500"}`}>
+                    INTER-PLANETARY STATUS
+                    <br />
+                  </li>
+                  <li className={`${travelStatus !== "TargetAcquired" ? "text-red-500" : "text-green-500"}`}>
+                    WARP READY
+                    <br />
+                  </li>
+                  <li className={`${ipr.missionId !== "" ? "text-red-500" : "text-green-500"}`}>
+                    AI-U BROADCAST
+                    <br />
+                  </li>
+                </span>
+
+                <ul className="w-[90%] text-left text-sm relative top-[0%] -left-[8%] overflow-y-auto overflow-x-hidden p-2">
+                  <span className="relative text-white font-bold">{ipsrOptions[count]} </span> <br />
+                  <li className="relative text-lg pr-4 description-text ">
+                    {ipr && JSON.stringify(ipr[ipsrOptions[count] as keyof InterPlanetaryStatusReport])}
+                  </li>
+                </ul>
                 <div
                   className="hex-data"
                   style={{
@@ -200,29 +191,63 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
                     pointerEvents: "none",
                   }}
                 >
-                  {JSON.stringify(interplanetaryStatusReport)}
+                  {JSON.stringify(ipr)}
                 </div>
                 <div
                   onClick={e => {
                     e.stopPropagation();
                   }}
                 ></div>
-              </div>
-            </>
-          ) : (
-            !selectedTokenId && (
-              <>
-                <p>Select a transmission ID</p>
               </>
-            )
-          )}
-
+            </div>
+          </div>
+          {selectedTokenId && (
+            <div className="relative top-1/2 mt-6 flex-col h-[10%]">
+              {!toggle && (
+                <button
+                  className={
+                    " w-full rounded font-bold hover:bg-green-700 description-text spaceship-text screen-border"
+                  }
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleScanClick();
+                  }}
+                >
+                  SCAN
+                </button>
+              )}
+              {toggle && description && (
+                <button
+                  className={`screen-border w-[50%] h-[90%] mt-3`}
+                  style={{
+                    border: "5px solid black",
+                  }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleButtonClick();
+                  }}
+                >
+                  <span
+                    className="spaceship-text"
+                    style={{
+                      color: "white",
+                      fontFamily: "Orbitron",
+                      fontSize: ".8rem",
+                    }}
+                  >
+                    {" "}
+                    SET COORDINATES
+                  </span>{" "}
+                </button>
+              )}
+            </div>
+          )}{" "}
           <div
-            className="screen-border"
+            className="screen-border p-5 pt-0"
             style={{
-              height: "20%",
+              height: "15%",
               width: "100%",
-              top: "78%",
+              top: "82%",
               left: "0%",
 
               flexDirection: "row",
@@ -231,129 +256,40 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
               position: "absolute",
             }}
           >
-            {travelStatus !== "NoTarget" && (
+            {!selectedTokenId && <span>Select a transmission ID</span>}- SCANNER - {scanning ? "ON" : "OFF"}
+            <div
+              style={{
+                fontWeight: "bold",
+                position: "relative",
+                height: "100%",
+                width: "100%",
+              }}
+            >
               <div
+                className="absolute spaceship-display-screen"
                 style={{
-                  fontWeight: "bold",
-                  position: "relative",
-                  height: "100%",
+                  top: "0%",
+                  left: "0%",
                   width: "100%",
+                  height: "65%",
                 }}
               >
-                {" "}
-                <div
-                  className="spaceship-screen-display"
-                  style={{
-                    position: "absolute",
-                    display: "flex",
-                    flexDirection: "row",
-                    scale: "1",
-                    width: "100%",
-                    height: "100%",
-                  }}
-                >
-                  {travelStatus === "AcquiringTarget" && selectedTokenId && !scanning && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      {!toggle && (
-                        <button
-                          className={
-                            "py-2 px-4 rounded font-bold  hover:bg-green-700 description-text spaceship-text screen-border"
-                          }
-                          style={{
-                            border: "15px solid black",
-                            width: "50%",
-                            height: "100%",
-                            margin: "0.2rem",
-                            marginTop: "-1.6rem",
-                            fontSize: "1.8rem",
-                            fontWeight: "bold",
-                          }}
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleScanClick();
-                          }}
-                        >
-                          {}
-                          SCAN
-                        </button>
-                      )}
-                    </div>
+                COORDINATES
+                <br />
+                <ul className="relative text-white text-xs -top-1">
+                  {travelStatus !== "NoTarget" ? (
+                    <>|Computing...|</>
+                  ) : (
+                    alienMessage.locationCoordinates?.x && (
+                      <li>
+                        X:{alienMessage?.locationCoordinates.x} Y:{alienMessage?.locationCoordinates.y} Z:
+                        {alienMessage?.locationCoordinates.z}
+                      </li>
+                    )
                   )}
-                  {toggle && description && (
-                    <div className="spaceship-display-screen">
-                      <button
-                        className={`screen-border`}
-                        style={{
-                          border: "15px solid black",
-                          width: "50%",
-                          height: "100%",
-                          margin: "0.2rem",
-                          marginTop: "-1.6rem",
-                        }}
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleButtonClick();
-                        }}
-                      >
-                        <span
-                          className="spaceship-button"
-                          style={{
-                            color: "white",
-                            fontFamily: "Orbitron",
-                            fontSize: ".8rem",
-                            height: "100%",
-                          }}
-                        >
-                          {" "}
-                          SET COORDINATES
-                        </span>{" "}
-                      </button>
-                    </div>
-                  )}
-                  <div
-                    className="spaceship-display-screen"
-                    style={{
-                      position: "absolute",
-                      display: "flex",
-                      flexDirection: "column",
-                      scale: "1.2",
-                      left: "55%",
-                      bottom: "23%",
-                      width: "43%",
-                      height: "100%",
-                    }}
-                  >
-                    <p
-                      style={{
-                        color: "white",
-                        marginBottom: "0rem",
-                        top: "-20%",
-                        bottom: "25%",
-                      }}
-                    >
-                      {" "}
-                      - STATUS -
-                    </p>
-                    SCANNING: {scanning ? "ON" : "OFF"}
-                    <br />
-                    <br />
-                    {travelStatus === "TargetAcquired" ? (
-                      <>|COORDINATES SET|</>
-                    ) : description.length > 0 ? (
-                      <>COMPUTING COORDINATES</>
-                    ) : (
-                      <>SETTING COODRINATES</>
-                    )}
-                  </div>
-                </div>
+                </ul>
               </div>
-            )}
-            <div className={"spaceship-display-screen"}>{travelStatus === "NoTarget" && <>NO TARGETS AVAILABLE</>}</div>
+            </div>
           </div>
         </>
       </div>

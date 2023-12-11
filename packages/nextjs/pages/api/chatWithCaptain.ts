@@ -142,7 +142,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       });
       for await (const chunk of stream) {
         process.stdout.write(chunk.choices[0]?.delta?.content || "");
-        res.write(chunk.choices[0]?.delta?.content || "");
+        res.status(200).write(chunk.choices[0]?.delta?.content || "");
       }
     } catch (error) {
       res.status(500).json({ error: `"Error chatting with the captain. ${error}"` });

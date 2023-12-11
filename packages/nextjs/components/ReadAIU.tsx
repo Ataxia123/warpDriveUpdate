@@ -1,6 +1,7 @@
 import { FunctionComponent, useEffect, useState } from "react";
 import IntergalacticReportDisplay from "./IntergalacticReportDisplay";
 import MetadataDisplay from "./MetadataDisplay";
+import { Faucet } from "./scaffold-eth/Faucet";
 import { useGlobalState, useImageStore } from "~~/services/store/store";
 import type { ApiResponses } from "~~/types/appTypes";
 import { stringToHex } from "~~/utils/nerdUtils";
@@ -24,10 +25,11 @@ interface ReadAIUProps {
   onMetadataReceived: (metadata: ApiResponses) => void;
   onImageSrcReceived: (imageSrc: string) => void;
   onTokenIdsReceived: (tokenIds: string[]) => void;
-  isMinimized: boolean; // Add this prop
   onToggleMinimize: () => void; // Add this prop
   onSubmit: (type: "character" | "background") => Promise<void>;
-  travelStatus: string;
+  travelStatus: string | undefined;
+  setEngaged: (engaged: boolean) => void;
+  selectedTokenId: string;
 }
 
 export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
@@ -35,21 +37,21 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
   playHolographicDisplay,
   playSpaceshipHum,
   handleScanning,
+  selectedTokenId,
   scanning,
   handleButtonClick,
   buttonMessageId,
-
+  engaged,
   setTravelStatus,
   travelStatus,
   onSubmit,
   onSelectedTokenIdRecieved,
-  isMinimized,
-  onToggleMinimize, // Destructure the onToggleMinimize prop
+  onToggleMinimize,
+  setEngaged, // Destructure the onToggleMinimize prop
 }) => {
   const tokenIds = useGlobalState(state => state.tokenIds);
-  const [selectedTokenId, setSelectedTokenId] = useState<string>();
   const [mouseTrigger, setMouseTrigger] = useState<boolean>(false);
-  const [engaged, setEngaged] = useState<boolean>(true);
+
   const scannerOptions = ["abilities", "currentEquipmentAndVehicle", "funFact", "powerLevel", "currentMissionBrief"];
   const parsedMetadata = useGlobalState(state => state.apiResponses);
   const scannerOutput = useGlobalState(state => state.metaScanData);
@@ -62,15 +64,14 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
   }));
 
   const handleTokenIdChange = (e: string) => {
-    setSelectedTokenId(e);
     playHolographicDisplay();
-    onSelectedTokenIdRecieved(e || ""); // Add this line
+    onSelectedTokenIdRecieved(e); // Add this line
   };
 
   //the important function
   const handleButton = () => {
     playHolographicDisplay();
-    if (travelStatus === "AcquiringTarget" && scanning === false) {
+    if (travelStatus === "AcquiringTarget") {
       playWarpSpeed();
       try {
         setTimeout(() => {
@@ -81,13 +82,12 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
         setTravelStatus("NoTarget");
         console.log(error);
       }
-    } else if (travelStatus === "AcquiringTarget" && scanning === true) {
+    } else if (travelStatus === "TargetAcquired") {
       playWarpSpeed();
       try {
         setTimeout(() => {
           handleButtonClick("U1", "background");
           console.log("clicked");
-          handleScanning(false);
         }, 2100);
       } catch (error) {
         setTravelStatus("NoTarget");
@@ -96,6 +96,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
     } else {
       if (selectedTokenId && travelStatus === "NoTarget") {
         setTravelStatus("AcquiringTarget");
+        handleScanning(true);
         playSpaceshipHum();
         setEngaged(true);
       } else {
@@ -150,7 +151,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
           <button
             key={button}
             className={`spaceship-button ${
-              travelStatus === "TargetAcquired" ? "active" : ""
+              buttonMessageId !== "" ? "active" : "pointer-events-none"
             } display-text screen-border`}
             style={{
               marginTop: "15%",
@@ -189,10 +190,14 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
         <div
           onMouseEnter={() => setMouseTrigger(true)}
           className="toggle-minimize-button spaceship-display-screen 
-                    opacity-90 p-1 top-1/2 mt-24
+                    opacity-90 p-1 top-1/2 mt-28
                     "
         >
-          <div onMouseEnter={onToggleMinimize} onMouseLeave={onToggleMinimize} className="spaceship-display-screen">
+          <div
+            onMouseEnter={() => setEngaged(true)}
+            onMouseLeave={() => setEngaged(false)}
+            className="spaceship-display-screen"
+          >
             <div className="screen-border h-full text-black bg-black">
               {selectedTokenId && travelStatus == "NoTarget" ? (
                 <div
@@ -256,24 +261,31 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
               </button>
             </div>
           </div>
-          {buttonMessageId !== "" && travelStatus !== "NoTarget" ? <AvailableButtons /> : <div></div>}
+          <AvailableButtons />
         </div>
       }
-      <IntergalacticReportDisplay
-        engaged={engaged}
-        selectedTokenId={selectedTokenId ? selectedTokenId : ""}
-        setEngaged={setEngaged}
-        travelStatus={travelStatus}
+
+      <Faucet
+        handleScanning={handleScanning}
         metadata={parsedMetadata}
+        engaged={engaged}
+        selectedTokenId={selectedTokenId}
+        travelStatus={travelStatus}
+        setEngaged={setEngaged}
+        playHolographicDisplay={playHolographicDisplay}
+        scannerOutput={scannerOutput}
+        scannerOptions={scannerOptions}
       />
 
-      <div className={`spaceship-display-screen token-selection-panel${!isMinimized && engaged ? "-focused" : ""}`}>
+      <div className={`spaceship-display-screen token-selection-panel${selectedTokenId == "" ? "" : "-focused"}`}>
         <div className="text-black relative opacity-100 h-full w-full overflow-hidden">
           <MetadataDisplay
+            imageState={imageState}
+            engaged={engaged}
+            setEngaged={setEngaged}
             playHolographicDisplay={playHolographicDisplay}
             scannerOutput={scannerOutput}
             scannerOptions={scannerOptions}
-            imageState={imageState}
           />
         </div>
       </div>

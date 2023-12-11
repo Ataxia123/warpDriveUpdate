@@ -7,7 +7,7 @@ import DescriptionPanel from "../components/panels/DescriptionPanel";
 import PromptPanel from "../components/panels/PromptPanel";
 import SpaceshipInterface from "../components/panels/SpaceshipInterface";
 import TokenSelectionPanel from "../components/panels/TokenSelectionPanel";
-import { useGlobalState as useAppStore, useImageStore } from "../services/store/store";
+import { useAppStore, useGlobalState, useImageStore } from "../services/store/store";
 import axios from "axios";
 import { ethers } from "ethers";
 import GraphemeSplitter from "grapheme-splitter";
@@ -20,52 +20,17 @@ import type {
   ChatData,
   MetaScanData,
   NftData,
+  PilotData,
   PlanetData,
   ProgressResponseType,
   Response,
+  ShipState,
   Sounds,
 } from "~~/types/appTypes";
 import { generatePrompt } from "~~/utils/nerdUtils";
 import { useEthersProvider } from "~~/utils/wagmi-utils";
 
 export default function Home() {
-  const [appState, setAppState] = useState({
-    loading: false,
-    loadingProgress: 0,
-    originatingMessageId: "",
-    error: "",
-    waitingForWebhook: false,
-    description: [],
-    selectedDescriptionIndex: 0,
-    selectedTokenId: "",
-    buttonMessageId: "",
-    backgroundImageUrl: "assets/background.png",
-    travelStatus: "NoTarget",
-    prevTravelStatus: "",
-    selectedDescription: "",
-    modifiedPrompt: "ALLIANCE OF THE INFINITE UNIVERSE",
-    warping: false,
-    scanning: false,
-    preExtraText: "",
-    AfterExtraText: "",
-  });
-  const {
-    loadingProgress,
-    loading,
-    prevTravelStatus,
-    error,
-    waitingForWebhook,
-    description,
-    selectedTokenId,
-    buttonMessageId,
-    backgroundImageUrl,
-    travelStatus,
-    modifiedPrompt,
-    warping,
-    scanning,
-  } = appState;
-  //session storage
-
   const { address } = useAccount();
   const { data: transferEvents } = useScaffoldEventHistory({
     contractName: "WarpDrive",
@@ -75,7 +40,7 @@ export default function Home() {
   });
 
   // Outside of the component
-
+  // WEB3 STUFF
   const { data: deployedContract } = useDeployedContractInfo("WarpDrive");
 
   const provider = useEthersProvider();
@@ -83,8 +48,19 @@ export default function Home() {
     return deployedContract ? new ethers.Contract(deployedContract.address, deployedContract.abi, provider) : null;
   };
   const contractInstance = createEthersContract();
-
+  const appStateGlobal = useAppStore(state => state);
   const imgStore = useImageStore(state => state);
+  const [sounds, setSounds] = useState<Sounds>({});
+  const [audioController, setAudioController] = useState<AudioController | null>(null);
+  const [tokenURI, setTokenURI] = useState<string>();
+  const [toggle, setToggle] = useState(false);
+  const [soundsLoaded, setSoundsLoaded] = useState<boolean>(false);
+  const intakeForm = useGlobalState(state => state.intakeForm);
+  const setIntakeForm = useGlobalState(state => state.setIntakeForm);
+
+  const appStore = useAppStore(state => state);
+  //session storage
+  //STATE STUFF
   const {
     setImageUrl,
     imageUrl,
@@ -93,28 +69,136 @@ export default function Home() {
     resetImages,
   } = imgStore;
 
-  const reset = useAppStore(state => state.reset);
-  const setNftData = useAppStore(state => state.setNftData);
-  const setPlanetData = useAppStore(state => state.setPlanetData);
-  const setMetaScanData = useAppStore(state => state.setMetaScanData);
-  const setTokenIds = useAppStore(state => state.setTokenIds);
-  const setInterplanetaryStatusReport = useAppStore(state => state.setInterPlanetaryStatusReport);
-  const setMidjourneyConfig = useAppStore(state => state.setMidjourneyConfig);
-  const midjourneyConfig = useAppStore(state => state.midjourneyConfig);
-  const metaScanData = useAppStore(state => state.metaScanData);
-  const interplanetaryStatusReport = useAppStore(state => state.interPlanetaryStatusReport);
-  const planetData = useAppStore(state => state.planetData);
-  const nftData = useAppStore(state => state.nftData);
-  const travels = useAppStore(state => state.travels);
-  const [sounds, setSounds] = useState<Sounds>({});
-  const [audioController, setAudioController] = useState<AudioController | null>(null);
-  const [soundsLoaded, setSoundsLoaded] = useState<boolean>(false);
+  const {
+    reset,
+    setNftData,
+    setPlanetData,
+    setMetaScanData,
+    setTokenIds,
+    setInterplanetaryStatusReport,
+    setMidjourneyConfig,
+    shipState,
+    setShipState,
+    midjourneyConfig,
+    engaged,
+    setEngaged,
+    metaScanData,
+    interplanetaryStatusReport,
+    planetData,
+    nftData,
+    travels,
+    setApiResponses,
+  } = useGlobalState(state => ({
+    reset: state.reset,
+    setNftData: state.setNftData,
+    setPlanetData: state.setPlanetData,
+    setMetaScanData: state.setMetaScanData,
+    setTokenIds: state.setTokenIds,
+    setInterplanetaryStatusReport: state.setInterPlanetaryStatusReport,
+    setMidjourneyConfig: state.setMidjourneyConfig,
+    shipState: state.shipState,
+    setShipState: state.setShipState,
+    midjourneyConfig: state.midjourneyConfig,
+    engaged: state.engaged,
+    setEngaged: state.setEngaged,
+    metaScanData: state.metaScanData,
+    interplanetaryStatusReport: state.interPlanetaryStatusReport,
+    planetData: state.planetData,
+    nftData: state.nftData,
+    travels: state.travels,
+    setApiResponses: state.setApiResponses,
+  }));
+  const {
+    loading,
+    setloading,
+    loadingProgress,
+    setloadingProgress,
+    originatingMessageId,
+    setOriginatingMessageId,
+    error,
+    setError,
+    waitingForWebhook,
+    setWaitingForWebhook,
+    description,
+    setDescription,
+    selectedDescriptionIndex,
+    setSelectedDescriptionIndex,
+    selectedTokenId,
+    setSelectedTokenId,
+    buttonMessageId,
+    setButtonMessageId,
+    backgroundImageUrl,
+    travelStatus,
+    setTravelStatus,
+    prevTravelStatus,
+    setPrevTravelStatus,
+    setSelectedDescription,
+    modifiedPrompt,
+    setModifiedPrompt,
+    warping,
+    setWarping,
+    scanning,
+    setScanning,
+    preExtraText,
+    setPreExtraText,
+    AfterExtraText,
+    setAfterExtraText,
+  } = useAppStore(state => ({
+    loading: state.loading,
+    setloading: state.setloading,
+    loadingProgress: state.loadingProgress,
+    setloadingProgress: state.setloadingProgress,
+    originatingMessageId: state.originatingMessageId,
+    setOriginatingMessageId: state.setOriginatingMessageId,
+    error: state.error,
+    setError: state.setError,
+    waitingForWebhook: state.waitingForWebhook,
+    setWaitingForWebhook: state.setWaitingForWebhook,
+    description: state.description,
+    setDescription: state.setDescription,
+    selectedDescriptionIndex: state.selectedDescriptionIndex,
+    setSelectedDescriptionIndex: state.setSelectedDescriptionIndex,
+    selectedTokenId: state.selectedTokenId,
+    setSelectedTokenId: state.setSelectedTokenId,
+    buttonMessageId: state.buttonMessageId,
+    setButtonMessageId: state.setButtonMessageId,
+    backgroundImageUrl: state.backgroundImageUrl,
+    setBackgroundImageUrl: state.setBackgroundImageUrl,
+    travelStatus: state.travelStatus,
+    setTravelStatus: state.setTravelStatus,
+    prevTravelStatus: state.prevTravelStatus,
+    setPrevTravelStatus: state.setPrevTravelStatus,
+    selectedDescription: state.selectedDescription,
+    setSelectedDescription: state.setSelectedDescription,
+    modifiedPrompt: state.modifiedPrompt,
+    setModifiedPrompt: state.setModifiedPrompt,
+    warping: state.warping,
+    setWarping: state.setWarping,
+    scanning: state.scanning,
+    setScanning: state.setScanning,
+    preExtraText: state.preExtraText,
+    setPreExtraText: state.setPreExtraText,
+    AfterExtraText: state.AfterExtraText,
+    setAfterExtraText: state.setAfterExtraText,
+  }));
 
-  const [tokenURI, setTokenURI] = useState<string>();
-  const updateState = (key: string, value: any) => {
-    setAppState(prevState => ({ ...prevState, [key]: value }));
+  const metadata: ApiResponses = {
+    interPlanetaryStatusReport: interplanetaryStatusReport,
+    nftData,
+    metaScanData,
+    planetData,
+    chatData: {} as ChatData,
+    midjourneyConfig,
+    imageData: {} as Response,
+    shipState,
+    pilotData: {} as PilotData,
   };
-  const [toggle, setToggle] = useState(false);
+
+  useEffect(() => {
+    if (!metadata) return;
+    setApiResponses(metadata);
+  }, [interplanetaryStatusReport]);
+
   const fetchUserBalance = async (address: string, contract: any) => {
     if (!address || !contract) return BigInt(0);
     try {
@@ -131,7 +215,7 @@ export default function Home() {
   };
 
   const fetchMetadata = async (tokenId: string) => {
-    if (!address || !deployedContract || !tokenId) return;
+    if (!address || !transferEvents || !tokenId) return;
     try {
       if (!contractInstance) return;
       const uri = await contractInstance.tokenURI(tokenId);
@@ -155,7 +239,7 @@ export default function Home() {
   };
 
   const fetchTokenIds = async () => {
-    if (!address || !deployedContract) {
+    if (!address || !transferEvents) {
       console.log("No address or deployed contract");
       resetAppState();
       return;
@@ -181,7 +265,7 @@ export default function Home() {
       acc[attr.trait_type] = attr.value;
       return acc;
     }, {});
-    const ipfsGateway = "https://ipfs.io"; // Choose a gateway
+    const ipfsGateway = "https://ipfs.ai-universe.io"; // Choose a gateway
     const imageUrl = metadata?.image.replace("ipfs://", `${ipfsGateway}/ipfs/`);
     console.log("attributes", metadata);
     if (!attributes) return;
@@ -197,6 +281,8 @@ export default function Home() {
     };
 
     setNftData(nftQuery);
+    fetchScanningReport(nftData);
+
     toast.success(`
                 INCOMING TRANSMISSION\n
             Established connection with:\n
@@ -208,164 +294,21 @@ export default function Home() {
     setMidjourneyConfig({ url: imageUrl });
   };
 
-  useEffect(() => {
-    if (address && toggle!) {
-      fetchTargetPlanet();
-      setToggle(true);
-
-      console.log("toggled", toggle);
-    } else return;
-    console.log("toggle", toggle);
-  }, [address]);
-
-  useEffect(() => {
-    if (Number(selectedTokenId) > 0 && !metaScanData.currentLocation?.x) {
-      fetchScanningReport(nftData);
-      console.log("selectedTokenId", selectedTokenId);
-    }
-  }, [nftData, selectedTokenId]);
-
-  useEffect(() => {
-    fetchMetadata(selectedTokenId);
-  }, [address, selectedTokenId]);
-  // Inside your component
-  useEffect(() => {
-    fetchTokenIds();
-  }, [address, deployedContract, transferEvents]);
-
-  useEffect(() => {
-    updateState("prevTravelStatus", travelStatus);
-    console.log("prevTravelStatus", prevTravelStatus);
-    if (travelStatus === "NoTarget" && prevTravelStatus === "TargetAcquired") {
-      // setTravels: (newTravel: any) => set(state => ({ travels: [...state.travels, newTravel] })),
-      createTravelResult();
-      console.log("GENERATED TRAVEL OUTPUT:", travels[1]);
-    }
-  }, [travelStatus]);
-
   const bMessageId = buttonMessageId;
 
   const { url: srcUrl, nijiFlag, selectedDescription, vFlag } = midjourneyConfig || {};
 
-  const metadata: ApiResponses = {
-    interPlanetaryStatusReport: interplanetaryStatusReport,
-    nftData,
-    metaScanData,
-    planetData,
-    chatData: {} as ChatData,
-    midjourneyConfig,
-    imageData: {} as Response,
-  };
-
   let count: number;
-  const loadSounds = useCallback(async () => {
-    const spaceshipOn = await audioController?.loadSound("/audio/spaceship-on.wav");
-    const spaceshipHum = await audioController?.loadSound("/audio/spaceship-hum.wav");
-    const holographicDisplay = await audioController?.loadSound("/audio/holographic-display.wav");
-    const warpSpeed = await audioController?.loadSound("/audio/warp-speed.wav");
 
-    if (spaceshipOn) {
-      audioController?.playSound(spaceshipOn, true, 0.02);
-      // Pass 'true' as the second argument to enable looping
-    }
-
-    setSounds({
-      spaceshipOn,
-      spaceshipHum,
-      holographicDisplay,
-      warpSpeed,
-    });
-
-    setSoundsLoaded(true);
-  }, [audioController, soundsLoaded]);
-  // AUDIO SETUP
-  useEffect(() => {
-    setAudioController(new AudioController());
-  }, []);
-
-  useEffect(() => {
-    if (audioController && !soundsLoaded) {
-      loadSounds();
-    }
-  }, [audioController, soundsLoaded, loadSounds]);
-
-  useEffect(() => {
-    if (sounds.spaceshipOn) {
-      audioController?.playSound(sounds.spaceshipOn, true, 0.02);
-      audioController?.playSound(sounds.spaceshipOn, true, 0.02);
-    }
-  }, [sounds.spaceshipOn]);
-  // SOUND EFFECTS
-  function playSpaceshipHum() {
-    if (sounds.spaceshipHum) {
-      audioController?.playSound(sounds.spaceshipHum, false, 0.6);
-    }
-  }
-
-  function playSpaceshipOn() {
-    if (sounds.spaceshipOn) {
-      audioController?.playSound(sounds.spaceshipOn, true, 0.02);
-    }
-  }
-
-  function playHolographicDisplay() {
-    if (sounds.holographicDisplay) {
-      audioController?.playSound(sounds.holographicDisplay, false, 1);
-    }
-  }
-
-  function playWarpSpeed() {
-    if (sounds.warpSpeed) {
-      audioController?.playSound(sounds.warpSpeed, false, 1.1);
-    }
-  }
-
-  function createTravelResult() {
-    // Collect all the required information for the travel result
-
-    return;
-  }
-
-  const handleActiveSate = (imageUrl: string, selectedDescription: string, interplanetaryStatusReport: string) => {
-    setAppState(prevState => ({
-      ...prevState,
-      imageUrl: imageUrl,
-      selectedDescription: selectedDescription,
-      interplanetaryStatusReport: interplanetaryStatusReport,
-    }));
-  };
-
-  const handleClearAppState = () => {
-    reset();
-    resetImages();
-  };
-  /*
-        const generateMetadata = async (n: NftData) => {
-            if (isNaN(count)) {
-                count = 0;
-                await                 .then(async e => {
-                    count++;
-
-                                       });
-                })
-                    .catch((err: any) => {
-                        console.log("ERROR", err);
-                        return (count = NaN);
-                    });
-            } else {
-                toast.error("fetching error");
-                console.log("count", count, selectedTokenId);
-                return;
-            }
-        };
-    */
   // TRAVEL HANDLER
-  const fetchScanningReport = async (nftQuery: NftData) => {
+  //
+  //
+  //
+  const pilotData = async () => {
     try {
       const response = await axios.post("/api/scanning_result", {
-        metadata: nftQuery,
+        metadata: intakeForm,
       });
-
       console.log("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
       const r = JSON.parse(response.data.scannerOutput.rawOutput);
       setMetaScanData(r);
@@ -375,19 +318,40 @@ export default function Home() {
                         Current Mission Brief: ${JSON.stringify(r.currentMissionBrief)}\n
                         RESULT SENT TO BACKEND"`,
       );
-      updateState("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
+      setMetaScanData(JSON.parse(response.data.scannerOutput.rawOutput));
       return r;
     } catch (error) {
       console.error("Error fetching scanning report:", error);
     }
   };
 
-  const fetchInterplanetaryStatusReport = async (s: PlanetData) => {
+  const fetchScanningReport = async (nftQuery: NftData) => {
+    try {
+      const response = await axios.post("/api/scanning_result", {
+        metadata: nftQuery,
+      });
+      console.log("scannerOutput", JSON.parse(response.data.scannerOutput.rawOutput));
+      const r = JSON.parse(response.data.scannerOutput.rawOutput);
+      setMetaScanData(r);
+      toast.success(
+        `
+                        AGENT LOCATION: ${JSON.stringify(r.currentLocation)}\n
+                        Current Mission Brief: ${JSON.stringify(r.currentMissionBrief)}\n
+                        RESULT SENT TO BACKEND"`,
+      );
+      setMetaScanData(JSON.parse(response.data.scannerOutput.rawOutput));
+      return r;
+    } catch (error) {
+      console.error("Error fetching scanning report:", error);
+    }
+  };
+
+  const fetchInterplanetaryStatusReport = async () => {
     try {
       const response = await axios.post("/api/generate_report", {
         metaScanData,
         nftData,
-        planetData: s,
+        planetData,
       });
 
       const t = JSON.parse(response.data.report);
@@ -409,16 +373,12 @@ export default function Home() {
   const fetchTargetPlanet = async () => {
     try {
       const response = await axios.post("/api/alienEncoder", {
-        metaScanData,
-        address,
-        planetData,
+        shipState,
       });
-      const s = JSON.parse(response.data.alienMessage);
+      const s = JSON.parse(response.data.newShipStatus);
       travels.push(s);
-      setPlanetData(s);
-      toast.success(`SectorId: ${s.SectorId}\n
-                        LocationName: ${s.Scan.locationName}\n
-                        EnvScan: ${s.Scan.environmental_analysis}`);
+      setShipState(s);
+      toast.success(`SYSTEMS OPERATIONAL\n)`);
       return s;
     } catch (error) {
       console.error("Error fetching target planet:", error);
@@ -458,53 +418,85 @@ export default function Home() {
 
   // handler for Generating images
   const submitPrompt = async (type: "character" | "background") => {
-    let prompt = generatePrompt(type, metadata, imgStore);
+    let prompt = generatePrompt(type, metadata);
 
     if (waitingForWebhook) {
       console.log("Already waiting for webhook, please wait for response.");
       return;
     }
-    updateState("waitingForWebhook", true);
-    updateState("warping", true);
-    console.log("WARP DRIVE IS CHARACTER IN ENGAGED", { warping, prompt });
+    setWaitingForWebhook(true);
+    setWarping(true);
 
     if (modifiedPrompt !== "ALLIANCE OF THE INFINITE UNIVERSE" && type === "character") {
       prompt = modifiedPrompt;
     }
+    console.log("WARP DRIVE IS CHARACTER IN ENGAGED", { warping, prompt });
 
     try {
-      const r = await axios.post("/api/apiHandler", { prompt: prompt });
+      const r = await axios.post("/api/image", { text: prompt });
 
       console.log("response", r);
-      updateState("response", r.data.response);
       // Set the appropriate state based on the type
-      if (type === "character") {
-        updateState("imageUrl", r.data.response.imageUrl);
 
-        setImageUrl(r.data.response.imageUrl);
-        updateState("buttonMessageId", r.data.buttonMessageId);
-      } else {
-        setBackgroundImageUrl(backgroundImageUrl);
-        updateState("buttonMessageId", r.data.buttonMessageId);
+      let taskComplete = false;
+      while (taskComplete == false && r.data.messageId) {
+        try {
+          const progressData = await fetchProgress(r.data.messageId);
+          console.log(
+            "Progress:",
+            progressData.progress,
+            progressData.response.buttonMessageId,
+            progressData.response.originatingMessageId,
+          );
+          console.log(progressData);
+
+          // Check if the progress is 100 or the task is complete
+          if (progressData.progress === 100 && progressData.response.imageUrl) {
+            setDisplayImageUrl(progressData.response.imageUrl);
+            const messageId = progressData.response.buttonMessageId;
+            setButtonMessageId(messageId || "");
+            console.log(buttonMessageId);
+
+            setWaitingForWebhook(false);
+            taskComplete = true;
+          } else if (
+            progressData.progress === "incomplete" ||
+            progressData.response.description === "Could not validate this link. Please try again later."
+          ) {
+            // Handle error case
+            console.error("Error: Task is incomplete");
+            taskComplete = true;
+
+            setWaitingForWebhook(false);
+
+            break;
+          } else {
+            // Update loading state with progressData.progress
+            console.log("Progress:", progressData.progress, progressData.response.buttonMessageId);
+
+            setloadingProgress(progressData.progress);
+
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 1 second before polling again
+          }
+        } catch (error: any) {
+          if (error.response.status !== 404) {
+            throw error;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 1 second before polling again
+        }
       }
     } catch (e: any) {
       console.log(e);
-      updateState("error", e.message);
-      updateState("warping", false);
-      updateState("travelStatus", "NoTarget");
-      updateState("scanning", false);
+      setError(e.message);
+      setWarping(false);
+      setTravelStatus("NoTarget");
+      setScanning(false);
+
+      setloadingProgress(0);
     }
-    if (type === "character") {
-      updateState("warping", false);
-      updateState("travelStatus", "NoTarget");
-      updateState("loadingProgress", "COMPLETE");
-    } else if (travelStatus === "AcquiringTarget") {
-      updateState("loadingProgress", "TRAVELING");
-    }
-    updateState("waitingForWebhook", false);
-    updateState("warping", false);
-    updateState("travelStatus", "NoTarget");
-    updateState("scanning", false);
+
+    setloadingProgress(0);
   };
 
   // handler for upscaling images
@@ -517,15 +509,15 @@ export default function Home() {
       console.log("Already waiting for webhook, please wait for response.");
       return;
     }
-    updateState("waitingForWebhook", true);
+    setWaitingForWebhook(true);
     if (type === "background") {
       console.log("buttonMessageId", buttonMessageId);
-      updateState("travelStatus", "TargetAcquired");
-      updateState("warping", true);
+      setTravelStatus("TargetAcquired");
+      setWarping(true);
     } else if (travelStatus === "AcquiringTarget") {
       console.log("buttonMessageId", buttonMessageId);
-      updateState("travelStatus", "TargetAcquired");
-      updateState("warping", true);
+      setTravelStatus("TargetAcquired");
+      setWarping(true);
     }
 
     try {
@@ -533,7 +525,6 @@ export default function Home() {
       const r = await axios.post("/api/postButtonCommand", { button, buttonMessageId: bMessageId });
 
       console.log("response", r);
-      updateState("response", JSON.stringify(r, null, 2));
 
       const taskComplete = false;
       let buttonCommandResponse, buttonId, imageUrl;
@@ -550,10 +541,23 @@ export default function Home() {
           console.log(progressData);
 
           // Check if the progress is 100 or the task is complete
-          if (progressData.progress === 100) {
+          if (
+            progressData.progress === 100 &&
+            progressData.response.imageUrl &&
+            progressData.response.buttonMessageId
+          ) {
             buttonCommandResponse = progressData;
             imageUrl = progressData.response.imageUrl;
             buttonId = progressData.response.buttonMessageId;
+            if (type === "character") {
+              setImageUrl(imageUrl);
+
+              setButtonMessageId(r.data.buttonMessageId);
+            } else {
+              setBackgroundImageUrl(buttonId);
+
+              setButtonMessageId(r.data.buttonMessageId);
+            }
           } else if (progressData.progress === "incomplete") {
             // Handle error case
             console.error("Error: Task is incomplete");
@@ -561,8 +565,9 @@ export default function Home() {
           } else {
             // Update loading state with progressData.progress
             console.log("Progress:", progressData.progress, progressData.response.buttonMessageId);
-            updateState("buttonMessageId", buttonId);
-            updateState("loading", progressData.progress);
+
+            setButtonMessageId(r.data.buttonMessageId);
+            setloadingProgress(progressData.progress);
 
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second before polling again
           }
@@ -575,78 +580,47 @@ export default function Home() {
       }
 
       if (type === "character") {
-        updateState("tempUrl", imageUrl);
         setDisplayImageUrl(imageUrl ? imageUrl : "");
       } else if (type === "background") {
-        updateState("backgroundImageUrl", imageUrl);
-        updateState("imageUrl", imageUrl);
+        setBackgroundImageUrl(imageUrl || "");
+        setImageUrl(imageUrl || "");
       }
 
-      updateState("travelStatus", "NoTarget");
+      setTravelStatus("NoTarget");
 
       console.log("Button Command Response:", buttonCommandResponse);
     } catch (e: any) {
       console.log(e);
-      updateState("error", e.message);
-      updateState("warping", false);
-      updateState("travelStatus", "NoTarget");
-      updateState("scanning", false);
-      updateState("waitingForWebhook", false);
-    }
-    updateState("warping", false);
-    updateState("scanning", false);
-    updateState("waitingForWebhook", false);
-    updateState("travelStatus", "NoTarget");
-    setBackgroundImageUrl(imageUrl);
 
-    updateState("loadingProgress", 0);
+      setError(e.message);
+      setWarping(false);
+      setTravelStatus("NoTarget");
+      setScanning(false);
+
+      setloadingProgress(0);
+    }
+
+    setWaitingForWebhook(false);
+    setBackgroundImageUrl(imageUrl);
+    setWarping(false);
+    setTravelStatus("NoTarget");
+    setScanning(false);
+
+    setloadingProgress(0);
     // handleDescribeClick();
   };
-
-  // handle recieving data from chlidren
-
-  const handleImageSrcReceived = (imageSrc: string) => {
-    console.log(srcUrl);
-    // Handle the imageSrc here, e.g., update the state or call another function
-  };
-
-  const handleModifedPrompt = (modifiedPrompt: Partial<ApiResponses>) => {
-    updateState("modifiedPrompt", modifiedPrompt);
-
-    console.log(" updateAllData(); foor modifiedPrompt");
-  };
-  const handleSelectedTokenIdRecieved = (selectedTokenId: string) => {
-    updateState("selectedTokenId", selectedTokenId);
-  };
-  const handleTokenIdsReceived = (tokenIds: string[]) => {
-    toast.success(`AI-U TOKEN IDS RECIEVED\n`);
-  };
-
-  const handleScanning = (scanning: boolean) => {
-    updateState("scanning", scanning);
-    console.log("SCANNING", { scanning });
-
-    return console.log("Tried to Upscale new background but", { travelStatus, scanning });
-  };
-
-  const handleEngaged = (engaged: boolean) => {
-    if (engaged === true) {
-      console.log("WARP DRIVE IS ENGAGED", { warping, engaged });
-    }
-  };
-
   const handleDescribeClick = async () => {
     console.log(
       `Submitting image URL: ${scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl}`,
     );
-    updateState("loading", true);
+    setloading(true);
 
     if (waitingForWebhook) {
       console.log("Already waiting for webhook, please wait for response.");
       return;
     }
-    fetchInterplanetaryStatusReport(planetData);
-    updateState("waitingForWebhook", true);
+    fetchInterplanetaryStatusReport();
+    setWaitingForWebhook(true);
 
     const url = scanning && backgroundImageUrl ? backgroundImageUrl : imageUrl ? imageUrl : srcUrl;
     console.log("url", url);
@@ -663,18 +637,144 @@ export default function Home() {
         return graphemes.slice(1).join("");
       });
 
-      updateState("description", cleanedDescription);
-      updateState("selectedDescription", cleanedDescription[0]);
+      setDescription(cleanedDescription);
+      setSelectedDescription(cleanedDescription[0]);
     } catch (e: any) {
       console.log(e);
-      updateState("error", e.message);
-      updateState("warping", false);
-      updateState("travelStatus", "NoTarget");
-      updateState("scanning", false);
+      setWaitingForWebhook(false);
+      setBackgroundImageUrl(imageUrl);
+      setWarping(false);
+      setTravelStatus("NoTarget");
+      setScanning(false);
 
-      updateState("loading", false);
+      setloadingProgress(0);
+      // handleDescribeClick();
     }
-    updateState("waitingForWebhook", false);
+
+    setWaitingForWebhook(false);
+  };
+
+  const loadSounds = useCallback(async () => {
+    const spaceshipOn = await audioController?.loadSound("/audio/spaceship-on.wav");
+    const spaceshipHum = await audioController?.loadSound("/audio/spaceship-hum.wav");
+    const holographicDisplay = await audioController?.loadSound("/audio/holographic-display.wav");
+    const warpSpeed = await audioController?.loadSound("/audio/warp-speed.wav");
+
+    if (spaceshipOn) {
+      audioController?.playSound(spaceshipOn, true, 0.02);
+      // Pass 'true' as the second argument to enable looping
+    }
+
+    setSounds({
+      spaceshipOn,
+      spaceshipHum,
+      holographicDisplay,
+      warpSpeed,
+    });
+
+    setSoundsLoaded(true);
+  }, [audioController, soundsLoaded]);
+  // AUDIO SETUP
+  useEffect(() => {
+    setAudioController(new AudioController());
+  }, []);
+
+  useEffect(() => {
+    if (audioController && !soundsLoaded) {
+      loadSounds();
+    }
+  }, [audioController, soundsLoaded, loadSounds]);
+
+  useEffect(() => {
+    if (sounds.spaceshipOn) {
+      audioController?.playSound(sounds.spaceshipOn, true, 0.02);
+      audioController?.playSound(sounds.spaceshipOn, true, 0.02);
+    }
+  }, [sounds.spaceshipOn]);
+
+  useEffect(() => {
+    if (address && toggle!) {
+      fetchTargetPlanet();
+      setToggle(true);
+
+      console.log("toggled", toggle);
+    } else return;
+    console.log("toggle", toggle);
+    setShipState({ pilot: address });
+  }, [address]);
+
+  useEffect(() => {
+    fetchMetadata(selectedTokenId);
+  }, [address, selectedTokenId]);
+  // Inside your component
+  useEffect(() => {
+    fetchTokenIds();
+  }, [address, deployedContract, transferEvents]);
+
+  useEffect(() => {
+    setPrevTravelStatus("travelStatus");
+    console.log("prevTravelStatus", prevTravelStatus);
+    if (travelStatus === "NoTarget" && prevTravelStatus === "TargetAcquired") {
+      // setTravels: (newTravel: any) => set(state => ({ travels: [...state.travels, newTravel] })),
+      console.log("GENERATED TRAVEL OUTPUT:", travels[1]);
+    }
+  }, [travelStatus]);
+
+  // SOUND EFFECTS
+  function playSpaceshipHum() {
+    if (sounds.spaceshipHum) {
+      audioController?.playSound(sounds.spaceshipHum, false, 0.6);
+    }
+  }
+
+  function playSpaceshipOn() {
+    if (sounds.spaceshipOn) {
+      audioController?.playSound(sounds.spaceshipOn, true, 0.02);
+    }
+  }
+
+  function playHolographicDisplay() {
+    if (sounds.holographicDisplay) {
+      audioController?.playSound(sounds.holographicDisplay, false, 1);
+    }
+  }
+
+  function playWarpSpeed() {
+    if (sounds.warpSpeed) {
+      audioController?.playSound(sounds.warpSpeed, false, 1.1);
+    }
+  }
+  // handle recieving data from chlidren
+
+  const handleImageSrcReceived = (imageSrc: string) => {
+    console.log(srcUrl);
+    // Handle the imageSrc here, e.g., update the state or call another function
+  };
+
+  const handleModifedPrompt = (modifiedPrompt: string) => {
+    setModifiedPrompt(modifiedPrompt);
+
+    console.log(" updateAllData(); foor modifiedPrompt");
+  };
+  const handleSelectedTokenIdRecieved = (selectedTokenId: string) => {
+    setSelectedTokenId(selectedTokenId);
+  };
+  const handleTokenIdsReceived = (tokenIds: string[]) => {
+    toast.success(`AI-U TOKEN IDS RECIEVED\n`);
+  };
+
+  const handleScanning = (scanning: boolean) => {
+    if (scanning === true) {
+    }
+    setScanning(!scanning);
+    console.log("SCANNING", { scanning });
+    fetchTargetPlanet();
+  };
+
+  const handleEngaged = (engaged: boolean) => {
+    if (engaged === true && selectedTokenId !== "") {
+      console.log("WARP DRIVE IS ENGAGED", { warping, engaged });
+    }
   };
 
   return (
@@ -702,6 +802,7 @@ export default function Home() {
             <AcquiringTarget loading={loading} travelStatus={travelStatus} selectedTokenId={selectedTokenId} />
 
             <TokenSelectionPanel
+              setEngaged={setEngaged}
               warping={warping}
               scannerOutput={metaScanData}
               playSpaceshipOn={playSpaceshipOn}
@@ -713,12 +814,13 @@ export default function Home() {
               buttonMessageId={buttonMessageId}
               handleButtonClick={handleButtonClick}
               modifiedPrompt={modifiedPrompt}
-              setTravelStatus={newStatus => updateState("travelStatus", newStatus)}
+              setTravelStatus={newStatus => setTravelStatus(newStatus)}
               handleEngaged={handleEngaged}
-              engaged={warping}
+              engaged={engaged}
               onMetadataReceived={handleMetadataReceived}
               onImageSrcReceived={handleImageSrcReceived}
               onTokenIdsReceived={handleTokenIdsReceived}
+              selectedTokenId={selectedTokenId}
               onSelectedTokenIdRecieved={handleSelectedTokenIdRecieved}
               onSubmit={submitPrompt}
               travelStatus={travelStatus}
@@ -726,14 +828,13 @@ export default function Home() {
             <DescriptionPanel
               alienMessage={planetData}
               playHolographicDisplay={playHolographicDisplay}
-              handleActiveState={handleActiveSate}
               handleSubmit={submitPrompt}
               scanning={scanning}
               handleScanning={handleScanning}
               travelStatus={travelStatus}
               selectedTokenId={selectedTokenId}
               description={description}
-              onDescriptionIndexChange={newDescription => updateState("setSelectedDescription", newDescription)}
+              onDescriptionIndexChange={newDescription => setSelectedDescriptionIndex(newDescription)}
               handleDescribeClick={handleDescribeClick}
             />
             <PromptPanel
@@ -742,8 +843,8 @@ export default function Home() {
               warping={warping}
               handleEngaged={handleEngaged}
               travelStatus={travelStatus}
-              engaged={warping}
-              setModifiedPrompt={handleModifedPrompt}
+              engaged={engaged}
+              setModifiedPrompt={newPrompt => setModifiedPrompt(newPrompt)}
               imageUrl={imageUrl}
               description={selectedDescription ? selectedDescription : "No Description"}
               srcUrl={srcUrl || ""}

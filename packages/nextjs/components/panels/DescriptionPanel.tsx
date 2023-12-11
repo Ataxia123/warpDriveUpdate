@@ -1,15 +1,16 @@
-import React, { useState } from "react";
-import { useGlobalState } from "~~/services/store/store";
-import type { InterPlanetaryStatusReport, PlanetData } from "~~/types/appTypes";
+import React, { useEffect, useState } from "react";
+import ChatWithCaptain from "./ChatWithCaptain";
+import { useGlobalState, useImageStore } from "~~/services/store/store";
+import type { InterPlanetaryStatusReport, PlanetData, ToggleOptions } from "~~/types/appTypes";
+import { generatePrompt, stringToHex } from "~~/utils/nerdUtils";
 
 interface DescriptionPanelProps {
   alienMessage: PlanetData;
   playHolographicDisplay: () => void;
-  handleActiveState: (imageUrl: string, selectedDescription: string, interplanetaryStatusReport: string) => void;
 
   scanning: boolean;
   handleScanning: (scanning: boolean) => void;
-  travelStatus: string;
+  travelStatus: string | undefined;
   description: string[];
 
   onDescriptionIndexChange: (index: number) => void;
@@ -29,10 +30,11 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
   handleDescribeClick,
   selectedTokenId,
 }) => {
-  const [focused, setFocused] = useState(true);
+  const [focused, setFocused] = useState(false);
 
   const [toggle, setToggle] = useState<boolean>(false);
 
+  const imageState = useImageStore(state => state);
   const handleClick = () => {
     playHolographicDisplay();
     setFocused(!focused);
@@ -51,249 +53,305 @@ export const DescriptionPanel: React.FC<DescriptionPanelProps> = ({
     handleSubmit("background");
     setToggle(!toggle);
   };
-  const ipr = useGlobalState(state => state.interPlanetaryStatusReport);
+
   const planetData = useGlobalState(state => state.planetData);
   const metaScan = useGlobalState(state => state.metaScanData);
+  const state = useGlobalState(state => state);
   const nftData = useGlobalState(state => state.nftData);
+  const chatData = useGlobalState(state => state.chatData);
+  const setChatData = useGlobalState(state => state.setChatData);
   const heroName = JSON.stringify(
     `${nftData.Level} ${nftData.Power1} ${nftData.Power2} ${nftData.Power3} ${nftData.Power3}`,
   ).replace(/undefined/g, "");
-  const ipsrOptions = [
-    "missionId",
-    "location",
-    "characters",
-    "objective",
-    "status",
-    "surroundingsDescription",
-    "conflictDescription",
-    "metadata",
-    "narrative",
-  ];
+
+  const [modifiedPrompt, setModifiedPrompt] = useState("ALLIANCEOFTHEINFINITEUNIVERSE");
+
+  // set string state to be either "character" or "background enforcing type
+  const [type, setType] = useState<"character" | "background">("character");
+  const [nijiFlag, setNijiFlag] = useState<boolean>(false);
+  const [vFlag, setVFlag] = useState<boolean>(false);
+  const [displayPrompt, setDisplayPrompt] = useState("");
+  const [toggleOptions, setToggleOptions] = useState<ToggleOptions>({});
+
+  const switchBoardButtons = ["Niji", "V5", "Background", "DESC", "URL", "CLEAR"];
+
+  const renderCheckbox = (label: string, state: boolean, setState: React.Dispatch<React.SetStateAction<boolean>>) => (
+    <label>
+      {label}
+      <input
+        type="checkbox"
+        checked={state}
+        onChange={e => {
+          e.stopPropagation();
+          setState(e.target.checked);
+        }}
+      />
+    </label>
+  );
+  const generateModifiedPrompt = () => {
+    const promptType = scanning ? "background" : "character";
+
+    // Use the toggleOptions to filter the promptData
+    //const newPrompt = response.replace(/undefined/g, "");
+    // Generate the prompt using the filtered data
+    // Update the modifiedPrompt state
+    //setModifiedPrompt(newPrompt);
+  };
 
   const [count, setCount] = useState(0);
-  const index = () => {
+  const [chatLog, setChatLog] = useState<string[]>([]);
+  const [userMessage, setUserMessage] = useState<string>("");
+
+  const handleUserMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUserMessage(event.target.value);
+  };
+
+  const handleSendMessage = async () => {
     playHolographicDisplay();
-    if (count < ipsrOptions.length - 1) {
-      setCount(count + 1);
-    } else {
-      setCount(0);
+    try {
+      const response = await fetch("/api/chatWithCaptain", {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/event-stream",
+        },
+        body: JSON.stringify({ userMessage, userSelection: chatData.userSelection, chatHistory: chatLog }),
+      });
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      let captainResponse = "";
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const partialResponse = decoder.decode(value, { stream: true });
+          captainResponse += partialResponse;
+          setChatLog([captainResponse]);
+          // Scroll to the bottom of the chat log container
+        }
+        chatData.naviMessages?.push(captainResponse);
+        setUserMessage(userMessage);
+        // Update global state here if necessary
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
+  useEffect(() => {
+    const chatContainer = document.getElementById(".chat-log-container");
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }, [chatLog]); // Dependency array includes chatLog, so this runs when chatLog changes
+
+  // Helper function to convert a string to a hex string
+
   return (
-    <div
-      className={`${
-        focused ? "focused-right spaceship-display-screen" : "unfocused-right scale-100 spaceship-display-screen"
-      }  spaceship-panel screen-border`}
-      style={{
-        transition: "all 0.5s ease-in-out",
-        padding: "0.4rem",
-        height: "50%",
-        width: "23%",
-        left: "70%",
-        top: "30%",
-      }}
-      onClick={handleClick}
-    >
-      <img
+    <>
+      -ENCODE SIGNAL-
+      <div
+        className={`${
+          focused ? "focused-right spaceship-display-screen" : "unfocused-right scale-100 spaceship-display-screen"
+        }  spaceship-panel screen-border`}
         style={{
-          top: "10%",
-          position: "absolute",
-          height: "80%",
-          width: "100%",
-          objectFit: "fill",
-          left: "8%",
-          padding: "5.5rem",
+          transition: "all 0.5s ease-in-out",
+          padding: "0.4rem",
+          height: "40%",
+          width: "23%",
+          left: "70%",
+          top: "40%",
         }}
-        src="aiu.png"
-      ></img>
-      <div className="spaceship-display-screen description-text flex-col-center p-2 pl-5" style={{}}>
-        <p
-          className=""
+        onClick={handleClick}
+      >
+        <div
+          className="absolute screen-border p-5 pt-0 "
           style={{
-            scale: "2.3",
+            height: "100%",
+            width: "100%",
+            top: "0%",
+            left: "0%",
+
+            flexDirection: "row",
+            backdropFilter: "blur(3px)",
+
+            position: "absolute",
           }}
         >
-          {" "}
-          AI-UNIVERSE
-        </p>
-        <p
-          style={{
-            color: "white",
-            scale: "1",
-            marginTop: "-2%",
-            marginBottom: "-5%",
-          }}
-        >
-          INTERGALACTIC SCANNER
-        </p>
-        <br />
-        <>
-          <div className="absolute text-left h-full w-full top-[12%] description-text">
-            <div
-              className="screen-border relative  cursor-pointer"
-              style={{
-                height: "50%",
-                paddingLeft: "3rem",
-                top: "2%",
-                bottom: "20%",
-                width: "100%",
-                left: "0%",
-                justifyContent: "left",
-                scale: "1.1",
-              }}
-              onClick={e => {
-                e.stopPropagation();
-                index();
-              }}
-            >
-              <>
-                {heroName.length > 10 && (
-                  <span className=" relative -left-[12%] text-sm">
-                    TRANSMISSION FROM <br /> <span className="text-sm text-white">{heroName}</span>
-                  </span>
-                )}
-
-                <span className="text-left text-sm relative top-[0%] -left-[12%] overflow-y-auto overflow-x-hidden p-2">
-                  MISSION CHECKLIST
-                  <li className={`${!planetData.planetId ? "text-red-500" : "text-green-500"}`}>
-                    PLANET COORDINATES
-                    <br />
-                  </li>
-                  <li className={`${!metaScan.currentLocation?.x ? "text-red-500" : "text-green-500"}`}>
-                    AI-U AGENT STATUS
-                    <br />
-                  </li>
-                  <li className={`${ipr.missionId !== "" ? "text-red-500" : "text-green-500"}`}>
-                    INTER-PLANETARY STATUS
-                    <br />
-                  </li>
-                  <li className={`${travelStatus !== "TargetAcquired" ? "text-red-500" : "text-green-500"}`}>
-                    WARP READY
-                    <br />
-                  </li>
-                  <li className={`${ipr.missionId !== "" ? "text-red-500" : "text-green-500"}`}>
-                    AI-U BROADCAST
-                    <br />
-                  </li>
-                </span>
-
-                <ul className="w-[90%] text-left text-sm relative top-[0%] -left-[8%] overflow-y-auto overflow-x-hidden p-2">
-                  <span className="relative text-white font-bold">{ipsrOptions[count]} </span> <br />
-                  <li className="relative text-lg pr-4 description-text ">
-                    {ipr && JSON.stringify(ipr[ipsrOptions[count] as keyof InterPlanetaryStatusReport])}
-                  </li>
-                </ul>
-                <div
-                  className="hex-data"
-                  style={{
-                    opacity: "0.3",
-
-                    pointerEvents: "none",
-                  }}
-                >
-                  {JSON.stringify(ipr)}
-                </div>
-                <div
-                  onClick={e => {
-                    e.stopPropagation();
-                  }}
-                ></div>
-              </>
-            </div>
-          </div>
-          {selectedTokenId && (
-            <div className="relative top-1/2 mt-6 flex-col h-[10%]">
-              {!toggle && (
-                <button
-                  className={
-                    " w-full rounded font-bold hover:bg-green-700 description-text spaceship-text screen-border"
-                  }
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleScanClick();
-                  }}
-                >
-                  SCAN
-                </button>
-              )}
-              {toggle && description && (
-                <button
-                  className={`screen-border w-[50%] h-[90%] mt-3`}
-                  style={{
-                    border: "5px solid black",
-                  }}
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleButtonClick();
-                  }}
-                >
-                  <span
-                    className="spaceship-text"
-                    style={{
-                      color: "white",
-                      fontFamily: "Orbitron",
-                      fontSize: ".8rem",
-                    }}
-                  >
-                    {" "}
-                    SET COORDINATES
-                  </span>{" "}
-                </button>
-              )}
-            </div>
-          )}{" "}
+          <ul>
+            <li className="text-3xl text-white font-bold p-5">N.A.V.I. COMMS</li>
+          </ul>
           <div
-            className="screen-border p-5 pt-0"
+            onClick={e => {
+              e.stopPropagation();
+            }}
+            className="absolute spaceship-display-screen"
             style={{
-              height: "15%",
-              width: "100%",
-              top: "82%",
-              left: "0%",
-
-              flexDirection: "row",
-              backdropFilter: "blur(3px)",
-
-              position: "absolute",
+              left: "-1%",
             }}
           >
-            {!selectedTokenId && <span>Select a transmission ID</span>}- SCANNER - {scanning ? "ON" : "OFF"}
-            <div
-              style={{
-                fontWeight: "bold",
-                position: "relative",
-                height: "100%",
-                width: "100%",
-              }}
-            >
+            <>
+              <p className="description-text" style={{ color: "white" }}>
+                {" "}
+                ||||||||||||AI-UNIVERSE SIGNAL ENCODER||||||||||||||
+              </p>
+
+              <div className="relative  ">
+                <div
+                  style={{
+                    height: "50%",
+                    color: "white",
+                  }}
+                >
+                  <div className="fixed p-6 m-2 top-10 left-0 overflow-y-auto h-1/3 " id=".chat-log-container">
+                    <span>USER MESSAGE: {modifiedPrompt}</span>
+                    <br />
+
+                    {chatLog.map(item => (
+                      <span key={item} className="">
+                        NAVI: {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div
-                className="absolute spaceship-display-screen"
+                className="toggles-container flex flex-wrap p-1 pl-12"
                 style={{
-                  top: "0%",
-                  left: "0%",
+                  border: "1px solid",
+                  alignContent: "center",
+
                   width: "100%",
-                  height: "65%",
+                  backgroundColor: "black",
+                  top: "50%",
+                  position: "absolute",
                 }}
               >
-                COORDINATES
+                <label>
+                  Talk to NAVI
+                  <input
+                    onClick={e => {
+                      e.stopPropagation();
+                    }}
+                    onChange={e => {
+                      e.stopPropagation();
+                      handleUserMessageChange(e);
+                    }}
+                    onSubmit={e => {
+                      e.stopPropagation();
+                    }}
+                    type="text"
+                    className="hex-prompt ml-5"
+                    value={userMessage}
+                    placeholder="Type your message..."
+                  />
+                </label>
+
                 <br />
-                <ul className="relative text-white text-xs -top-1">
-                  {travelStatus !== "NoTarget" ? (
-                    <>|Computing...|</>
-                  ) : (
-                    alienMessage.locationCoordinates?.x && (
-                      <li>
-                        X:{alienMessage?.locationCoordinates.x} Y:{alienMessage?.locationCoordinates.y} Z:
-                        {alienMessage?.locationCoordinates.z}
-                      </li>
-                    )
-                  )}
-                </ul>
+                <label>
+                  AIU-SCAN
+                  <input
+                    className="hex-prompt ml-10"
+                    type="text"
+                    value={displayPrompt}
+                    placeholder="Viewfinder Request..."
+                    onChange={e => {
+                      e.stopPropagation();
+                      playHolographicDisplay();
+                      setDisplayPrompt(e.target.value);
+                    }}
+                  />
+                </label>
+
+                <div className="relative flex-row space-x-3 -space-y-2 text-xs cursor-pointer">
+                  <br />
+                  <button
+                    className="hex-prompt p-2"
+                    onClick={() => {
+                      playHolographicDisplay();
+                      handleSendMessage();
+                    }}
+                  >
+                    <span
+                      className=""
+                      style={{
+                        color: "white",
+                      }}
+                    >
+                      Send Message
+                    </span>
+                  </button>
+
+                  <button
+                    className="hex-prompt p-1.5"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleScanClick();
+                    }}
+                  >
+                    SCAN
+                  </button>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleButtonClick();
+                    }}
+                  >
+                    <span className="hex-prompt p-1.5"> SET TARGET</span>{" "}
+                  </button>
+                  <button
+                    className="hex-prompt p-1.5"
+                    onClick={e => {
+                      {
+                        generateModifiedPrompt();
+                        playHolographicDisplay();
+                        //onModifiedPrompt(displayPrompt || "");
+                      }
+                      e.stopPropagation();
+                    }}
+                  >
+                    Submit
+                  </button>
+                </div>
+                <li>
+                  {!selectedTokenId && <span>Select a transmission ID</span>}:
+                  {selectedTokenId && <>TokenId:{selectedTokenId}</>}
+                </li>
+
+                {travelStatus !== "NoTarget" ? (
+                  <>|Computing...|</>
+                ) : (
+                  alienMessage?.locationCoordinates?.x && (
+                    <li>
+                      X:{alienMessage?.locationCoordinates.x} Y:{alienMessage?.locationCoordinates.y} Z:
+                      {alienMessage?.locationCoordinates.z}
+                    </li>
+                  )
+                )}
+
+                <li> SCANNER - {scanning ? "ON" : "OFF"}</li>
+
+                {renderCheckbox("nijiFlag", nijiFlag, setNijiFlag)}
+                {renderCheckbox("vFlag", vFlag, setVFlag)}
               </div>
-            </div>
+
+              <div className="hex-data">
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+              </div>
+            </>
           </div>
-        </>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

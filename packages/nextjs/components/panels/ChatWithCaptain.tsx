@@ -1,18 +1,15 @@
 import React, { useState } from "react";
+import { useGlobalState } from "~~/services/store/store";
 import type { NftData } from "~~/types/appTypes";
 
-interface ChatWithCaptainProps {
-  metadata: NftData;
-}
-
-const ChatWithCaptain: React.FC<ChatWithCaptainProps> = ({ metadata }) => {
-  const scanResults = metadata.Level;
+const ChatWithCaptain: React.FC = () => {
   const [chatLog, setChatLog] = useState<string[]>([]);
   const [userMessage, setUserMessage] = useState<string>("");
 
   const handleUserMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUserMessage(event.target.value);
   };
+  const state = useGlobalState(state => state);
 
   const handleSendMessage = async () => {
     try {
@@ -21,43 +18,59 @@ const ChatWithCaptain: React.FC<ChatWithCaptainProps> = ({ metadata }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ metadata, userMessage }),
+        body: JSON.stringify({ message: userMessage }),
       });
 
-      const data = await response.json();
-      setChatLog([...chatLog, userMessage, data.captainResponse]);
-      setUserMessage("");
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      let captainResponse = "";
+      reader?.read().then(function processText({ done, value }) {
+        if (done) {
+          setChatLog([...chatLog, userMessage, captainResponse]);
+
+          setUserMessage("");
+          return;
+        }
+
+        captainResponse += decoder.decode(value, { stream: true });
+        reader?.read().then(processText);
+        console.log(captainResponse, response);
+      });
     } catch (error) {
       console.error("Error sending message:", error);
     }
   };
 
   return (
-    <div className="spaceship-display-screen " style={{ padding: "1.5rem", marginLeft: "-2.5%" }}>
-      <div className="chat-container ">
-        <div className="chat-log">
-          {chatLog.map((message, index) => (
-            <div key={index} className={index % 2 === 0 ? "user-message" : "captain-message"}>
-              {message}
-            </div>
-          ))}
-
-          <input
-            type="text"
-            className="prompt-input description-text spaceship-display-screen"
-            value={userMessage}
-            onChange={handleUserMessageChange}
-            placeholder="Type your message..."
-          />
-        </div>
-      </div>
-      <button className="spaceship-button" onClick={handleSendMessage}>
+    <div className="relative top-0 left-0">
+      <button className="relative" onClick={handleSendMessage}>
         <span className="" style={{ color: "white" }}>
           Send
         </span>
       </button>
+
+      <div className="hex-prompt p-5">
+        {chatLog.map((message, index) => (
+          <div key={index} className={index % 2 === 0 ? "user-message" : "captain-message"}>
+            {message}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
 export default ChatWithCaptain;
+
+{
+  /*
+
+const reader = response?.body?.getReader();
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  const stringDecodedData = new TextDecoder("utf-8").decode(value);
+}
+*/
+}

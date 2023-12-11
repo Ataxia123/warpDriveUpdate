@@ -25,10 +25,12 @@ interface TokenSelectionPanelProps {
   onSelectedTokenIdRecieved: (selectedTokenId: string) => void;
   onSubmit: (type: "character" | "background") => Promise<void>;
   engaged: boolean;
-  travelStatus: string;
+  travelStatus: string | undefined;
   playHolographicDisplay: () => void;
   playSpaceshipHum: () => void;
   playWarpSpeed: () => void;
+  setEngaged: (engaged: boolean) => void;
+  selectedTokenId: string;
 }
 
 const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
@@ -52,20 +54,22 @@ const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
   onSelectedTokenIdRecieved,
   onSubmit,
   travelStatus,
+  setEngaged,
+  selectedTokenId,
 }) => {
-  const [isMinimized, setIsMinimized] = useState(false);
-
   const handleClick = () => {
-    if (isMinimized === true) {
-      setIsMinimized(false);
+    if (engaged === true) {
+      setEngaged(false);
       return;
     }
-    setIsMinimized(true);
+    setEngaged(true);
   };
 
   return (
     <>
       <ReadAIU
+        selectedTokenId={selectedTokenId}
+        setEngaged={setEngaged}
         warping={warping}
         scannerOutput={scannerOutput}
         playSpaceshipOn={playSpaceshipOn}
@@ -81,7 +85,6 @@ const TokenSelectionPanel: React.FC<TokenSelectionPanelProps> = ({
         setTravelStatus={setTravelStatus}
         handleEngaged={handleEngaged}
         travelStatus={travelStatus}
-        isMinimized={isMinimized} // Pass isMinimized as a prop
         onMetadataReceived={onMetadataReceived}
         onImageSrcReceived={onImageSrcReceived}
         onTokenIdsReceived={onTokenIdsReceived}

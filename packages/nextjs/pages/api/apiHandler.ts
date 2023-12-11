@@ -21,7 +21,7 @@ function sleep(milliseconds: number) {
  * You can also use a webhook to get notified when the image is ready.
  * It will contain the same response body as seen here.
  */
-const fetchToCompletion: any = async (messageId: string, retryCount: number, maxRetry = 40) => {
+const fetchToCompletion: any = async (messageId: string, retryCount: number, maxRetry = 20) => {
   const imageRes = await fetch(`${BASE_URL}/message/${messageId}`, {
     method: "GET",
     headers: AUTH_HEADERS,
@@ -60,10 +60,11 @@ const fetchToCompletion: any = async (messageId: string, retryCount: number, max
 // we wrap it in a main function here so we can use async/await inside of it.
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { prompt: prompt } = req.body;
-  /**   * GENERATE THE IMAGE
-   */
+  const { url, prompt } = req.body;
   try {
+    /**
+     * GENERATE THE IMAGE
+     */
     const imageRes = await fetch(`${BASE_URL}/imagine`, {
       method: "POST",
       headers: AUTH_HEADERS,

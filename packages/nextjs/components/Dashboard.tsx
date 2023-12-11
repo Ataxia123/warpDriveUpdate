@@ -10,7 +10,7 @@ interface DashboardProps {
   error: string;
   warping: boolean;
   children: React.ReactNode;
-  travelStatus: string;
+  travelStatus: string | undefined;
   dynamicImageUrl: string;
   imageUrl: string;
   srcUrl: string;

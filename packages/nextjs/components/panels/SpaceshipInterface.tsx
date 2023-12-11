@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ToastBar, Toaster, toast } from "react-hot-toast";
 
 interface SpaceshipInterfaceProps {
-  travelStatus: string;
+  travelStatus: string | undefined;
 }
 
 const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus }) => {
@@ -18,12 +18,12 @@ const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus })
     pointerEvents: videoPlaying ? "auto" : "none",
     opacity: videoPlaying ? 0.8 : 0.2,
     zIndex: -1,
-    left: "70.3%",
-    top: "19%",
+    left: "66.3%",
+    top: "0%",
     width: "18.5%",
     height: "20%",
     position: "absolute",
-    transform: "perspective(200px) rotateZ(-47deg) rotateY(-10deg) rotateX(5deg)skewX(-22deg)skewY(21deg)",
+    transform: "perspective(200px) rotateZ(-47deg) rotateY(-10deg) rotateX(-15deg)skewX(-15deg)skewY(10deg)",
   };
 
   useEffect(() => {
@@ -32,7 +32,7 @@ const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus })
     }
   }, [travelStatus]);
   const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=${
-    videoPlaying ? "1" : "0"
+    videoPlaying ? "0" : "1"
   }&mute=0&enablejsapi=1`;
   useEffect(() => {
     const loadYoutubeAPI = () => {
@@ -87,7 +87,7 @@ const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus })
         <iframe
           className={`screen-border spaceship-interface ${videoPlaying ? "video-playing" : ""}`}
           style={{
-            width: "100%",
+            width: "90%",
           }}
           id="ytplayer"
           src={iframeSrc}
@@ -99,18 +99,18 @@ const SpaceshipInterface: React.FC<SpaceshipInterfaceProps> = ({ travelStatus })
             background: "transparent",
             zIndex: -2,
             left: "0",
-            right: "70.3%",
+            right: "60.3%",
             transform:
-              "perspective(1000px) rotateZ(20deg) rotateX(40deg) rotateY(-20deg) translateX(-5%) skewX(-10deg) translateY(25%) scale(1.5)",
+              "perspective(1000px) rotateZ(25deg) rotateX(45deg) rotateY(-24deg) translateX(15%) skewX(15deg) translateY(168%) scale(1.60)",
           }}
         >
           <Toaster
             containerClassName=""
             containerStyle={{
               top: 20,
-              left: 30,
+              left: 50,
               bottom: 20,
-              right: 20,
+              right: 0,
             }}
             toastOptions={{
               className: "spaceship-display-screen",

@@ -3,30 +3,11 @@ import { useImageStore } from "~~/services/store/store";
 import type { ApiResponses, ToggleOptions } from "~~/types/appTypes";
 import { generatePrompt, stringToHex } from "~~/utils/nerdUtils";
 
-interface SwitchboardProps {
-  description: string;
-  playHolographicDisplay: () => void;
-  imageUrl: string;
-  scanning: boolean;
-  handleEngaged: (engaged: boolean) => void;
-  travelStatus: string;
-  engaged: boolean;
-  warped: boolean;
-  onModifiedPrompt: (modifiedPrompt: Partial<ApiResponses>) => void;
-  attributes: string[];
-  onToggle: (attribute: string, isEnabled: boolean) => void;
+export const Switchboard: React.FC = ({}) => {
+  let playHolographicDisplay: () => void;
+  const scanning = false;
+  const travelStatus = "";
 
-  promptData: ApiResponses;
-  selectedAttributes: string[];
-}
-
-export const Switchboard: React.FC<SwitchboardProps> = ({
-  playHolographicDisplay,
-  scanning,
-  travelStatus,
-  attributes,
-  promptData,
-}) => {
   const [modifiedPrompt, setModifiedPrompt] = useState("ALLIANCEOFTHEINFINITEUNIVERSE");
   const imageState = useImageStore(state => state);
 
@@ -58,132 +39,119 @@ export const Switchboard: React.FC<SwitchboardProps> = ({
   const generateModifiedPrompt = () => {
     const promptType = scanning ? "background" : "character";
 
-    const response = generatePrompt(promptType, promptData, imageState);
     // Use the toggleOptions to filter the promptData
-    const newPrompt = response.replace(/undefined/g, "");
+    //const newPrompt = response.replace(/undefined/g, "");
     // Generate the prompt using the filtered data
     // Update the modifiedPrompt state
-    setModifiedPrompt(newPrompt);
+    //setModifiedPrompt(newPrompt);
   };
 
   return (
     <>
+      -ENCODE SIGNAL-
       <div
-        className="spaceship-display-screen overflow-auto prompt-display-div"
-        style={{
-          overflowX: "hidden",
-          opacity: 1.5,
+        onClick={e => {
+          e.stopPropagation();
         }}
+        className="spaceship-display-screen"
       >
-        -ENCODE SIGNAL-
-        <div
-          onClick={e => {
-            e.stopPropagation();
-          }}
-          className="spaceship-display-screen"
-        >
-          {travelStatus !== "NoTarget" ? (
-            <>
-              <p className="description-text" style={{ color: "white" }}>
-                {" "}
-                ||||||||||||AI-UNIVERSE SIGNAL ENCODER||||||||||||||
-              </p>
-              <div className="hex-prompt">
-                <div
-                  style={{
-                    padding: "20px",
-                    color: "white",
+        <>
+          <p className="description-text" style={{ color: "white" }}>
+            {" "}
+            ||||||||||||AI-UNIVERSE SIGNAL ENCODER||||||||||||||
+          </p>
+          <div className="hex-prompt">
+            <div
+              style={{
+                padding: "20px",
+                color: "white",
+              }}
+            >
+              <input
+                style={{
+                  top: "10%",
+                  height: "10%",
+                  left: "-0%",
+                  position: "absolute",
+                }}
+                type="text"
+                className="prompt-input spaceship-display-screen overflow-hidden"
+                value={displayPrompt}
+                onChange={e => {
+                  e.stopPropagation();
+                  playHolographicDisplay();
+                  setDisplayPrompt(e.target.value);
+                }}
+              />
+
+              <div className="hex-data">
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+                {stringToHex(modifiedPrompt)}
+              </div>
+
+              {modifiedPrompt}
+            </div>
+            <br />
+            <div
+              style={{
+                display: "flexbox",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            ></div>
+
+            <br />
+            <div
+              className="spaceship-display-screen switchboard-attribute-container"
+              style={{
+                position: "relative",
+              }}
+            >
+              |||||||||||-------|DETECTED SIGNATURE DATA|----|||||||||||||
+              <div className="switchboard-real">
+                <button
+                  className="description-text spaceship-display-screen"
+                  style={{ border: "1px solid", margin: "10px", alignContent: "right" }}
+                  onClick={e => {
+                    {
+                      generateModifiedPrompt();
+                      playHolographicDisplay();
+                      //onModifiedPrompt(displayPrompt || "");
+                    }
+                    e.stopPropagation();
                   }}
                 >
-                  <input
-                    style={{
-                      top: "10%",
-                      height: "10%",
-                      left: "-0%",
-                      position: "absolute",
-                    }}
-                    type="text"
-                    className="prompt-input spaceship-display-screen overflow-hidden"
-                    value={displayPrompt}
-                    onChange={e => {
-                      e.stopPropagation();
-                      playHolographicDisplay();
-                      setDisplayPrompt(e.target.value);
-                    }}
-                  />
-
-                  <div className="hex-data">
-                    {stringToHex(modifiedPrompt)}
-                    {stringToHex(modifiedPrompt)}
-                    {stringToHex(modifiedPrompt)}
-                    {stringToHex(modifiedPrompt)}
-                    {stringToHex(modifiedPrompt)}
-                    {stringToHex(modifiedPrompt)}
-                    {stringToHex(modifiedPrompt)}
-                    {stringToHex(modifiedPrompt)}
-                  </div>
-
-                  {modifiedPrompt}
-                </div>
-                <br />
+                  Submit
+                </button>
                 <div
+                  className="toggles-container"
                   style={{
-                    display: "flexbox",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                ></div>
+                    display: "flex",
+                    flexDirection: "row",
+                    border: "1px solid",
+                    margin: "10px",
+                    alignContent: "right",
 
-                <br />
-                <div
-                  className="spaceship-display-screen switchboard-attribute-container"
-                  style={{
+                    padding: "10px",
+                    width: "38%",
+                    backgroundColor: "black",
+                    top: "0%",
                     position: "relative",
                   }}
                 >
-                  |||||||||||-------|DETECTED SIGNATURE DATA|----|||||||||||||
-                  <div className="switchboard-real">
-                    <button
-                      className="description-text spaceship-display-screen"
-                      style={{ border: "1px solid", margin: "10px", alignContent: "right" }}
-                      onClick={e => {
-                        {
-                          generateModifiedPrompt();
-                          playHolographicDisplay();
-                          //onModifiedPrompt(displayPrompt || "");
-                        }
-                        e.stopPropagation();
-                      }}
-                    >
-                      Submit
-                    </button>
-                    <div
-                      className="toggles-container"
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        border: "1px solid",
-                        margin: "10px",
-                        alignContent: "right",
-
-                        padding: "10px",
-                        width: "38%",
-                        backgroundColor: "black",
-                        top: "0%",
-                        position: "relative",
-                      }}
-                    >
-                      {renderCheckbox("nijiFlag", nijiFlag, setNijiFlag)}
-                      {renderCheckbox("vFlag", vFlag, setVFlag)}
-                    </div>{" "}
-                  </div>
-                </div>
+                  {renderCheckbox("nijiFlag", nijiFlag, setNijiFlag)}
+                  {renderCheckbox("vFlag", vFlag, setVFlag)}
+                </div>{" "}
               </div>
-            </>
-          ) : (
-            <div>ENCODER OUT OF RANGE</div>
-          )}
-        </div>
+            </div>
+          </div>
+        </>
       </div>
     </>
   );

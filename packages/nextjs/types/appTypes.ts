@@ -1,8 +1,17 @@
+import { ChainWithAttributes } from "~~/utils/scaffold-eth";
+
 export type MidjourneyConfig = {
   nijiFlag: boolean;
   vFlag: boolean;
   selectedDescription: string;
   url: string;
+};
+
+export type PilotData = {
+  account: string;
+  nickname: string;
+  occupation: string;
+  guild: string;
 };
 
 export type Response = {
@@ -23,15 +32,23 @@ export type ToggleOptions = {
   imageData?: boolean; // Assuming imageData is a simple boolean toggle
   midJourneyConfig?: Partial<Record<keyof MidjourneyConfig, boolean>>;
 };
+export type Sounds = {
+  spaceshipHum?: AudioBuffer | null;
+  spaceshipOn?: AudioBuffer | null;
+  holographicDisplay?: AudioBuffer | null;
+  warpSpeed?: AudioBuffer | null;
+};
 
 export type ApiResponses = {
   interPlanetaryStatusReport: InterPlanetaryStatusReport;
   nftData: NftData;
   metaScanData: MetaScanData;
   planetData: PlanetData;
-  chatData: ChatData;
+  chatData: Partial<ChatData>;
   imageData: Response;
   midjourneyConfig: MidjourneyConfig;
+  shipState: ShipState;
+  pilotData: PilotData;
 };
 
 export type InterPlanetaryStatusReport = {
@@ -68,6 +85,17 @@ export type MetaScanData = {
   blockNumber: string;
 };
 
+export type ShipState = {
+  shipId: string;
+  pilot: string;
+  inventory: { fuel: number; supplies: number; cargo: { name: string; units: number } };
+  navigationData: {
+    location: { x: number; y: number; z: number };
+    sectorId: string;
+    nearestPlanetId: string;
+    navigationNotes: string;
+  };
+};
 export type PlanetData = {
   planetId: string;
   locationCoordinates: { x: number; y: number; z: number };
@@ -81,10 +109,18 @@ export type PlanetData = {
     controlledBy: boolean | null;
   };
 };
+export type shipStatusReport = {
+  shipState: ShipState;
+  planetScan: PlanetData;
+  DescriptiveText: string;
+};
 
 export type ChatData = {
-  messages: string[];
+  userMessages: string[];
+  naviMessages: string[];
+  captainMessages: string[];
   chatId: string;
+  userSelection: string;
 };
 
 export type ProgressResponseType = {
@@ -98,6 +134,7 @@ export type ProgressResponseType = {
     content?: string;
     ref?: string;
     responseAt?: string;
+    description?: string;
   };
 };
 
@@ -105,11 +142,4 @@ export type StoreState = {
   interplanetaryStatusReports: string[];
   scanningResults: string[][];
   imagesStored: string[];
-};
-
-export type Sounds = {
-  spaceshipHum?: AudioBuffer | null;
-  spaceshipOn?: AudioBuffer | null;
-  holographicDisplay?: AudioBuffer | null;
-  warpSpeed?: AudioBuffer | null;
 };

@@ -11,7 +11,7 @@ interface BackgroundProps {
   warping: boolean;
   dynamicImageUrl: string;
   fixedImageUrl: string;
-  travelStatus: string;
+  travelStatus: string | undefined;
 }
 
 const Background: React.FC<BackgroundProps> = ({

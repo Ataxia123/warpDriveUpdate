@@ -184,7 +184,8 @@ export async function createWebcomic(
 }
 */
 
-export const generatePrompt = (type: "character" | "background", metadata: ApiResponses, imageData: any): string => {
+export const generatePrompt = (type: "character" | "background", metadata: ApiResponses): string => {
+  const APP_URL = "";
   const niji = metadata.midjourneyConfig?.nijiFlag ? "--niji 5" : "";
   const v = metadata.midjourneyConfig?.vFlag ? "--v 5" : "";
   const keyword = type === "background" ? "The Planet Of" : "A portrait of";
@@ -200,7 +201,6 @@ export const generatePrompt = (type: "character" | "background", metadata: ApiRe
   } = metadata.nftData || {};
   const { currentEquipmentAndVehicle, currentMissionBrief, abilities, powerLevel, funFact, biometricReading } =
     metadata.metaScanData || {};
-  const { imageUrl } = imageData;
   const { url: srcUrl, selectedDescription } = metadata.midjourneyConfig || {};
   const { locationCoordinates, Scan } = metadata.planetData || {};
   const randomPlanet =
@@ -211,7 +211,7 @@ export const generatePrompt = (type: "character" | "background", metadata: ApiRe
                     ${JSON.stringify(Scan)} ${JSON.stringify(locationCoordinates)}
                     ${niji} ${v} viewed from space`.trim();
 
-  result = `${imageUrl} ${keyword}  ${level} ${power1} 
+  result = `${srcUrl} ${keyword}  ${level} ${power1} 
                 ${power2} ${power3} ${power4} ${currentMissionBrief} 
                 Power Level: ${powerLevel}${biometricReading?.health} 
                 ${currentEquipmentAndVehicle} ${abilities} ${funFact} 

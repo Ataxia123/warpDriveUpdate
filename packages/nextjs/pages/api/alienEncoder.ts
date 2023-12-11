@@ -1,59 +1,67 @@
 // /pages/api/generateAlienLanguage.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
-import type { MetaScanData, NftData, PlanetData } from "~~/types/appTypes";
+import type { shipStatusReport } from "~~/types/appTypes";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_AUTH_TOKEN,
 });
 
-async function generateAlienLanguage(metaScanData: MetaScanData, address: string, planetData: PlanetData) {
+async function generateAlienLanguage(shipStatusReport?: shipStatusReport) {
   const messages: any[] = [
     {
       role: "system",
       content: `"You are the targetting computer of a ship in 
             the Alliance of the Infinite Universe. 
-            You have established an uplink with an AIU operator.
-
-           If coordinates or the metaScanData is missing 
-            describe the subquadrant of the sector 
-            that the target is in.
+            Systems are operational and you are ready to begin the mission. 
 
 
-            You need to need to triangulate their location and provide the following report.
+            You need to need to triangulate the ship's location and provide the following report.
+ Shipstatusreport = {
+ shipState: {
+    shipid: string;
+    pilot: string;
+    inventory: { fuel: number; supplies: number; cargo: { name: string; units: number; } };
+    navigationdata: {
 
-       {
-            SectorId: string;
-            locationCoordinates: {x:number,y:number,z:number}.
-            planetId: string;
-            Scan: {
-            locationName: string,
-            enviromental_analysis: string,
-            historical_facts: string[],
-            known_entities: string[],
-            NavigationNotes: string,
-            DescriptiveText: string,
-            controlledBy: boolean | null;
-            },
+        location: { x: number; y: number; z: number };
+        sectorid: string;
+        nearestplanetid: string;
+        navigationnotes: string,
+    },
+},
+ planetData: {
+    planetid: string;
+    locationcoordinates: { x: number; y: number; z: number };
+    scan: {
+        locationName: string;
+        enviromental_analysis: string;
+        historical_facts: string[];
+        known_entities: string[];
+        navigationNotes: string;
+        descriptiveText: string;
+        controlledBy: boolean | null;
+    },
+};
+    descriptiveText: string,
+}
+.
 
 
-
-        Use the Message information to come up with the report in JSON format using your creativity."`,
+        Return the report in JSON format using your creativity."`,
     },
     {
       role: "assistant",
-      content: `MetaScanning:${JSON.stringify(metaScanData)}
-            previousLocation: ${JSON.stringify(planetData)}
-        Coordinates: ${planetData.locationCoordinates}.
-
-`,
+      content: `"MetaScanning [TIP: AIU SCANNERS ALWAYS RETURN SOME USEFUL INFORMATION]
+EXISTING RESULT: ${shipStatusReport ? shipStatusReport : "NO PREV DATA GENERATE NEW REPORT"}
+"`,
     },
     {
       role: "user",
       content: `"Incoming Transmissiong from AIU Operator.
    
-                CREDENTIALS VALIDATED ${address}
-                Begin triangulating target location."`,
+                CREDENTIALS VALIDATED ${shipStatusReport?.shipState.pilot}
+                Begin target location."`,
     },
   ];
 
@@ -71,11 +79,11 @@ async function generateAlienLanguage(metaScanData: MetaScanData, address: string
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "POST") {
-    const { metaScanData, address, planetData } = req.body;
+    const { shipStatusReport } = req.body;
     try {
-      const alienMessage = await generateAlienLanguage(metaScanData, address, planetData);
+      const newShipStatus = await generateAlienLanguage(shipStatusReport);
 
-      res.status(200).json({ alienMessage });
+      res.status(200).json({ newShipStatus });
     } catch (error) {
       res.status(500).json({ error: "Error generating alien language." });
     }

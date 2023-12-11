@@ -7,10 +7,10 @@ interface PromptPanelProps {
   playHolographicDisplay: () => void;
   scanning: boolean;
   handleEngaged: (engaged: boolean) => void;
-  travelStatus: string;
+  travelStatus: string | undefined;
   warping: boolean;
   engaged: boolean;
-  setModifiedPrompt: (modifiedPrompt: Partial<ApiResponses>) => void;
+  setModifiedPrompt: (modifiedPrompt: string) => void;
   description: string;
   buttonMessageId: string | "";
   imageUrl: string;
@@ -58,7 +58,7 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
 
-  function handleModifiedPrompt(modifiedPrompt: Partial<ApiResponses>) {
+  function handleModifiedPrompt(modifiedPrompt: string) {
     //Do something with the modifiedPrompt, e.g., update the state or perform other actions
     setModifiedPrompt(modifiedPrompt);
     console.log(modifiedPrompt);
@@ -114,21 +114,15 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
 
       <>
         <>
-          <Switchboard
-            description={description}
-            playHolographicDisplay={playHolographicDisplay}
-            imageUrl={imageUrl}
-            scanning={scanning}
-            handleEngaged={handleEngaged}
-            travelStatus={travelStatus}
-            engaged={engaged}
-            warped={warping}
-            onModifiedPrompt={handleModifiedPrompt}
-            attributes={attributes}
-            onToggle={handleToggle}
-            promptData={metadata}
-            selectedAttributes={selectedAttributes}
-          />
+          <div
+            className="spaceship-display-screen overflow-auto prompt-display-div"
+            style={{
+              overflowX: "hidden",
+              opacity: 1.5,
+            }}
+          >
+            <Switchboard />
+          </div>
         </>
       </>
     </div>

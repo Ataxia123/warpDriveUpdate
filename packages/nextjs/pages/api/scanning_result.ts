@@ -34,7 +34,7 @@ async function generateScannerOutput(metadata: NftData) {
                 2)${JSON.stringify(metadata.Power2)}
                 3)${JSON.stringify(metadata.Power3)}
                 4)${JSON.stringify(metadata.Power4)}
-                    Alignment:
+                    Alignment
                 ${JSON.stringify(metadata.Alignment1)}
                 ${JSON.stringify(metadata.Alignment2)}
                     Class:

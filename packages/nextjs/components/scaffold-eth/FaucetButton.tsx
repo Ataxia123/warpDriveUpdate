@@ -27,27 +27,6 @@ export const FaucetButton = () => {
 
   const faucetTxn = useTransactor(localWalletClient);
 
-  const sendETH = async () => {
-    try {
-      setLoading(true);
-      await faucetTxn({
-        chain: hardhat,
-        account: FAUCET_ADDRESS,
-        to: address,
-        value: parseEther(NUM_OF_ETH),
-      });
-      setLoading(false);
-    } catch (error) {
-      console.error("⚡️ ~ file: FaucetButton.tsx:sendETH ~ error", error);
-      setLoading(false);
-    }
-  };
-
-  // Render only on local chain
-  if (ConnectedChain?.id !== hardhat.id) {
-    return null;
-  }
-
   return (
     <div
       className={
@@ -57,7 +36,7 @@ export const FaucetButton = () => {
       }
       data-tip="Grab funds from faucet"
     >
-      <button className="btn btn-secondary btn-sm px-2 rounded-full" onClick={sendETH} disabled={loading}>
+      <button className="btn btn-secondary btn-sm px-2 rounded-full" disabled={loading}>
         {!loading ? (
           <BanknotesIcon className="h-4 w-4" />
         ) : (

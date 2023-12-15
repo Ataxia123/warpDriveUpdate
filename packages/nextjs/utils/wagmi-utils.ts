@@ -1,47 +1,70 @@
-import * as React from "react";
-import { FallbackProvider, JsonRpcProvider } from "ethers";
-import { BrowserProvider, JsonRpcSigner } from "ethers";
+import { type PublicClient, type WalletClient } from "@wagmi/core";
 import { type HttpTransport } from "viem";
-import { type PublicClient, usePublicClient } from "wagmi";
-import { type WalletClient, useWalletClient } from "wagmi";
+import { useEffect, useState } from "react";
+import { usePublicClient, useWalletClient } from "wagmi";
+import { ethers, JsonRpcProvider, JsonRpcSigner } from "ethers";
 
 export function publicClientToProvider(publicClient: PublicClient) {
-  const { chain, transport } = publicClient;
-  const network = {
-    chainId: chain.id,
-    name: chain.name,
-    ensAddress: chain.contracts?.ensRegistry?.address,
-  };
-  if (transport.type === "fallback") {
-    const providers = (transport.transports as ReturnType<HttpTransport>[]).map(
-      ({ value }) => new JsonRpcProvider(value?.url, network),
+    const { chain, transport } = publicClient;
+    const network = {
+        chainId: chain.id,
+        name: chain.name,
+        ensAddress: chain.contracts?.ensRegistry?.address,
+    };
+    if (transport.type === "fallback")
+        return new ethers.FallbackProvider(
+            (transport.transports as ReturnType<HttpTransport>[]).map(
+                ({ value }) => new ethers.JsonRpcProvider(value?.url, network)
+            )
+        );
+    return new ethers.JsonRpcProvider(transport.url, network);
+}
+
+export async function walletClientToSigner(walletClient: WalletClient) {
+    const { account, chain, transport } = walletClient;
+    const network = {
+        chainId: chain.id,
+        name: chain.name,
+        ensAddress: chain.contracts?.ensRegistry?.address,
+    };
+    const provider = new ethers.BrowserProvider(transport, network);
+    return provider.getSigner(account.address);
+}
+
+export function useSigner() {
+    const { data: walletClient } = useWalletClient();
+
+    const [signer, setSigner] = useState<JsonRpcSigner | undefined>(undefined);
+    useEffect(() => {
+        async function getSigner() {
+            if (!walletClient) return;
+
+            const tmpSigner = await walletClientToSigner(walletClient);
+
+            setSigner(tmpSigner);
+        }
+
+        getSigner();
+    }, [walletClient]);
+    return signer;
+}
+
+export function useProvider() {
+    const publicClient = usePublicClient();
+
+    const [provider, setProvider] = useState<JsonRpcProvider | undefined>(
+        undefined
     );
-    if (providers.length === 1) return providers[0];
-    return new FallbackProvider(providers);
-  }
-  return new JsonRpcProvider(transport.url, network);
-}
+    useEffect(() => {
+        async function getSigner() {
+            if (!publicClient) return;
 
-/** Hook to convert a viem Public Client to an ethers.js Provider. */
-export function useEthersProvider({ chainId }: { chainId?: number } = {}) {
-  const publicClient = usePublicClient({ chainId });
-  return React.useMemo(() => publicClientToProvider(publicClient), [publicClient]);
-}
+            const tmpProvider = publicClientToProvider(publicClient);
 
-export function walletClientToSigner(walletClient: WalletClient) {
-  const { account, chain, transport } = walletClient;
-  const network = {
-    chainId: chain.id,
-    name: chain.name,
-    ensAddress: chain.contracts?.ensRegistry?.address,
-  };
-  const provider = new BrowserProvider(transport, network);
-  const signer = new JsonRpcSigner(provider, account.address);
-  return signer;
-}
+            setProvider(tmpProvider as JsonRpcProvider);
+        }
 
-/** Hook to convert a viem Wallet Client to an ethers.js Signer. */
-export function useEthersSigner({ chainId }: { chainId?: number } = {}) {
-  const { data: walletClient } = useWalletClient({ chainId });
-  return React.useMemo(() => (walletClient ? walletClientToSigner(walletClient) : undefined), [walletClient]);
+        getSigner();
+    }, [publicClient]);
+    return provider;
 }

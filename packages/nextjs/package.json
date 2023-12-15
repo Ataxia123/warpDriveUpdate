@@ -14,6 +14,7 @@
     "vercel:yolo": "vercel --build-env NEXT_PUBLIC_IGNORE_BUILD_ERROR=true"
   },
   "dependencies": {
+    "@ethereum-attestation-service/eas-sdk": "^1.3.7",
     "@ethersproject/providers": "^5.7.2",
     "@heroicons/react": "^2.0.11",
     "@rainbow-me/rainbowkit": "1.3.0",
@@ -37,8 +38,8 @@
     "styled-components": "^6.1.1",
     "use-debounce": "^8.0.4",
     "usehooks-ts": "^2.7.2",
-    "viem": "1.19.9",
-    "wagmi": "1.4.7",
+    "viem": "^1.19.13",
+    "wagmi": "^1.4.11",
     "zustand": "^4.1.2"
   },
   "devDependencies": {

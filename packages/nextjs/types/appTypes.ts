@@ -1,145 +1,267 @@
 import { ChainWithAttributes } from "~~/utils/scaffold-eth";
 
 export type MidjourneyConfig = {
-  nijiFlag: boolean;
-  vFlag: boolean;
-  selectedDescription: string;
-  url: string;
+    nijiFlag: boolean;
+    vFlag: boolean;
+    selectedDescription: string;
+    url: string;
 };
 
-export type PilotData = {
-  account: string;
-  nickname: string;
-  occupation: string;
-  guild: string;
+export type IntakeForm = {
+    account: string;
+    nickname: string;
+    occupation: string;
+    guild: string;
 };
 
 export type Response = {
-  accountId: string;
-  createdAt: string;
-  originatingMessageId: string;
-  ref: string;
-  buttons: ["U1", "U2", "U3", "U4", "🔄", "V1", "V2", "V3", "V4"];
-  imageUrl: string;
-  imageUrls: string[];
+    accountId: string;
+    createdAt: string;
+    originatingMessageId: string;
+    ref: string;
+    buttons: ["U1", "U2", "U3", "U4", "🔄", "V1", "V2", "V3", "V4"];
+    imageUrl: string;
+    imageUrls: string[];
 };
+
 export type ToggleOptions = {
-  interPlanetaryStatusReport?: Partial<Record<keyof InterPlanetaryStatusReport, boolean>>;
-  nftData?: Partial<Record<keyof NftData, boolean>>;
-  metaScanData?: Partial<Record<keyof MetaScanData, boolean>>;
-  planetData?: Partial<Record<keyof PlanetData, boolean>>;
-  chatData?: Partial<Record<keyof ChatData, boolean>>;
-  imageData?: boolean; // Assuming imageData is a simple boolean toggle
-  midJourneyConfig?: Partial<Record<keyof MidjourneyConfig, boolean>>;
+    interPlanetaryStatusReport?: Partial<Record<keyof QuestData, boolean>>;
+    nftData?: Partial<Record<keyof NftData, boolean>>;
+    metaScanData?: Partial<Record<keyof MetaScanData, boolean>>;
+    planetData?: Partial<Record<keyof PlanetData, boolean>>;
+    chatData?: Partial<Record<keyof ChatData, boolean>>;
+    imageData?: boolean; // Assuming imageData is a simple boolean toggle
+    midJourneyConfig?: Partial<Record<keyof MidjourneyConfig, boolean>>;
 };
+
 export type Sounds = {
-  spaceshipHum?: AudioBuffer | null;
-  spaceshipOn?: AudioBuffer | null;
-  holographicDisplay?: AudioBuffer | null;
-  warpSpeed?: AudioBuffer | null;
+    spaceshipHum?: AudioBuffer | null;
+    spaceshipOn?: AudioBuffer | null;
+    holographicDisplay?: AudioBuffer | null;
+    warpSpeed?: AudioBuffer | null;
 };
 
 export type ApiResponses = {
-  interPlanetaryStatusReport: InterPlanetaryStatusReport;
-  nftData: NftData;
-  metaScanData: MetaScanData;
-  planetData: PlanetData;
-  chatData: Partial<ChatData>;
-  imageData: Response;
-  midjourneyConfig: MidjourneyConfig;
-  shipState: ShipState;
-  pilotData: PilotData;
+    questData: QuestData;
+    nftData: NftData;
+    metaScanData: MetaScanData;
+    planetData: PlanetData;
+    chatData: Partial<ChatData>;
+    imageData: Response;
+    midjourneyConfig: MidjourneyConfig;
+    shipState: ShipState;
+    pilotData: PilotState;
 };
 
-export type InterPlanetaryStatusReport = {
-  missionId: string;
-  location: { planet_name: string; coordinates: { x: number; y: number; z: number } };
-  characters: { fName: string; members: string[] };
-  objective: string;
-  status: string;
-  surroundingsDescription: string;
-  conflictDescription: string;
-  metadata: { difficulty: number; EXPrewards: number; missionId: string };
-  narrative: string;
+export type AIUDatabase = {
+    planetData: PlanetData[];
+    locationData: Location[];
+    pilotData: PilotState[];
+    missions: QuestData[];
+    ships: ShipState[];
+    items: Item[];
+    encounterResults: EncounterResultData[];
+    quipux: Quipux[];
+    story: AIUBroadcast[];
 };
 
 export type NftData = {
-  Level: string;
-  Power1: string;
-  Power2: string;
-  Power3: string;
-  Power4: string;
-  Alignment1: string;
-  Alignment2: string;
-  Side: string;
-};
-export type MetaScanData = {
-  heroId: string;
-  biometricReading: { health: number; status: string[] };
-  currentEquipmentAndVehicle: string[];
-  currentMissionBrief: string;
-  abilities: string[];
-  powerLevel: number;
-  funFact: string;
-  currentLocation: { x: number; y: number; z: number };
-  blockNumber: string;
+    nftId: string;
+    Level: string;
+    Power1: string;
+    Power2: string;
+    Power3: string;
+    Power4: string;
+    Alignment1: string;
+    Alignment2: string;
+    Side: string;
 };
 
-export type ShipState = {
-  shipId: string;
-  pilot: string;
-  inventory: { fuel: number; supplies: number; cargo: { name: string; units: number } };
-  navigationData: {
-    location: { x: number; y: number; z: number };
-    sectorId: string;
-    nearestPlanetId: string;
-    navigationNotes: string;
-  };
-};
-export type PlanetData = {
-  planetId: string;
-  locationCoordinates: { x: number; y: number; z: number };
-  Scan: {
+export type Location = {
+    locationId: string;
+    coordinates: [
+        x: number,
+        y: number,
+        z: number,
+    ];
     locationName: string;
-    enviromental_analysis: string;
-    historical_facts: string[];
-    known_entities: string[];
-    NavigationNotes: string;
-    DescriptiveText: string;
-    controlledBy: boolean | null;
-  };
+    locationFunFact: string;
+    nearestLocationId: string;
+    navigationNotes: string;
+    imageUrl: string;
+}
+
+export type Item = {
+    itemId: string;
+    weight: number;
+    rarity: string;
+    aiUseAnalysis: string;
+    creditValue: number;
+}
+
+export type Ability = {
+    name: string;
+    range: number;
+    description: string;
+    caveats: string;
+}
+
+export type Stats = {
+    maxHealth: number;
+    speed: number;
+    attack: number;
+    defense: number;
+    maxRange: number
+    abilities: Ability[]
+    status: { health: number; resources: number; status: string[]; };
 };
-export type shipStatusReport = {
-  shipState: ShipState;
-  planetScan: PlanetData;
-  DescriptiveText: string;
+
+
+export type AIUBroadcast = {
+    quipuxIds: [{ questId: string, quipuxId: string[] }]
+    rewards: [{ pilotId: string, credits: number; itemIds: string[] }]
+    storyText: string;
+    imageUrl: string;
+}
+
+export type Quipux = {
+    quipuxId: string;
+    manifestId: string;
+    questId: string;
+    rewardIds: string[];
+    credits: number;
+    encounterIds: string[];
+    prevQuipuxId: string;
+}
+
+export type Manifest = {
+    manifestId: string;
+    pilotState: PilotState,
+    shipData: ShipState,
+    planetScan: PlanetData;
+    currentLocation: Location;
+    descriptiveText: string;
+    imageUrl: string;
+}
+
+export type QuestData = {
+    issuedBy: string,
+    questId: string,
+    status: string;
+    beaconLocation: Location;
+    descriptiveText: string,
+    objectives: string[],
+    creditBounty: number,
+    difficulty: number,
+    imageUrl: string,
+}
+
+export type MetaScanData = {
+    heroId: string;
+    shipId: string;
+    questId: string;
+    stats: Stats;
+    nftData: NftData;
+    abilities: string[];
+    inventory: Item[];
+    powerLevel: number;
+    funFact: string;
+    locationBeacon0: Location;
+    blockNumber: string;
+    imageUrl: string;
 };
+
+export type PilotState = {
+    pilotId: string,
+    pilotName: string,
+    pilotDescription: string,
+    imageUrl: string,
+    alignment: string,
+    guildId: string,
+    guildName: string,
+    credits: number,
+    currentThought: string,
+    stats: Stats,
+    inventory: Item[],
+    locationShip0: Location;
+}
+export type ShipState = {
+    pilotId: string;
+    shipId: string;
+    shipName: string;
+    owner: string;
+    locationBeacon0: Location;
+    stats: Stats;
+    cargo: { fuel: number; supplies: number; cargo: Item[] };
+    currentStatus: string;
+    funFact: string,
+    imageUrl: string,
+};
+
+export type PlanetData = {
+    planetId: string;
+    discoveredBy: string;
+    locationBeacon0: Location;
+    Scan: {
+        enviromental_analysis: string;
+        historical_facts: string[];
+        known_entities: string[];
+        NavigationNotes: string;
+        DescriptiveText: string;
+        controlledBy: boolean | null;
+    };
+};
+
+export type EncounterResultData = {
+    encounterId: string;
+    prevEncounterId: string;
+    encounterData: EncounterData;
+    stateChangeLog: string[];
+    NarrativeText: string;
+    imageUrl: string;
+};
+
+export type EncounterData = {
+    questId: string;
+    encounterId: string;
+    description: String;
+    locationCoordinates: Location;
+    metadata: {
+        entities: [{ entityId: string; status: Stats }];
+        pointsOfInterest: String[];
+        type: String;
+        rules: object;
+        commentsForEngine: String;
+    };
+}
+
+
 
 export type ChatData = {
-  userMessages: string[];
-  naviMessages: string[];
-  captainMessages: string[];
-  chatId: string;
-  userSelection: string;
+    userMessages: string[];
+    naviMessages: string[];
+    captainMessages: string[];
+    chatId: string;
+    userSelection: string;
 };
 
 export type ProgressResponseType = {
-  progress: number | "incomplete";
-  response: {
-    createdAt?: string;
-    buttons?: string[];
-    imageUrl?: string;
-    buttonMessageId?: string;
-    originatingMessageId?: string;
-    content?: string;
-    ref?: string;
-    responseAt?: string;
-    description?: string;
-  };
+    progress: number | "incomplete";
+    response: {
+        createdAt?: string;
+        buttons?: string[];
+        imageUrl?: string;
+        buttonMessageId?: string;
+        originatingMessageId?: string;
+        content?: string;
+        ref?: string;
+        responseAt?: string;
+        description?: string;
+    };
 };
 
 export type StoreState = {
-  interplanetaryStatusReports: string[];
-  scanningResults: string[][];
-  imagesStored: string[];
+    interplanetaryStatusReports: string[];
+    scanningResults: string[][];
+    imagesStored: string[];
 };

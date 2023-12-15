@@ -1,5 +1,6 @@
 import { useState } from "react";
 import LogViewer from "./panels/LogViewer";
+import ShipSpinner from "~~/components/ShipSpinner";
 import { useGlobalState } from "~~/services/store/store";
 
 const MetadataDisplay = (props: {

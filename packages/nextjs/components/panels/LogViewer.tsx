@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAppStore, useGlobalState, useImageStore, useQuipuxStore } from "~~/services/store/store";
-import type { ApiResponses, ChatData, InterPlanetaryStatusReport, MetaScanData, PlanetData, Quipux } from "~~/types/appTypes";
+import type { ApiResponses, ChatData, MetaScanData, PlanetData, Quipux } from "~~/types/appTypes";
 import axios from "axios";
 // Dummy data for demonstration purposes
 

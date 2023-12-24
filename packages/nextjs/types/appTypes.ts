@@ -27,7 +27,7 @@ export type Response = {
 export type ToggleOptions = {
     interPlanetaryStatusReport?: Partial<Record<keyof QuestData, boolean>>;
     nftData?: Partial<Record<keyof NftData, boolean>>;
-    metaScanData?: Partial<Record<keyof MetaScanData, boolean>>;
+    metaScanData?: Partial<Record<keyof HeroCodex, boolean>>;
     planetData?: Partial<Record<keyof PlanetData, boolean>>;
     chatData?: Partial<Record<keyof ChatData, boolean>>;
     imageData?: boolean; // Assuming imageData is a simple boolean toggle
@@ -44,7 +44,7 @@ export type Sounds = {
 export type ApiResponses = {
     questData: QuestData;
     nftData: NftData;
-    metaScanData: MetaScanData;
+    metaScanData: HeroCodex;
     planetData: PlanetData;
     chatData: Partial<ChatData>;
     imageData: Response;
@@ -67,6 +67,7 @@ export type AIUDatabase = {
 
 export type NftData = {
     nftId: string;
+    capName: string;
     Level: string;
     Power1: string;
     Power2: string;
@@ -78,7 +79,7 @@ export type NftData = {
 };
 
 export type Location = {
-    locationId: string;
+    quadrantId: string;
     coordinates: [
         x: number,
         y: number,
@@ -156,10 +157,11 @@ export type QuestData = {
     imageUrl: string,
 }
 
-export type MetaScanData = {
+export type HeroCodex = {
     heroId: string;
     shipId: string;
     questId: string;
+    questBrief: string;
     stats: Stats;
     nftData: NftData;
     abilities: string[];

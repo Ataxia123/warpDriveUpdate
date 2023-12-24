@@ -2,7 +2,7 @@ import { FunctionComponent, useEffect, useState } from "react";
 import IntergalacticReportDisplay from "./IntergalacticReportDisplay";
 import MetadataDisplay from "./MetadataDisplay";
 import { Faucet } from "./scaffold-eth/Faucet";
-import { useGlobalState, useImageStore } from "~~/services/store/store";
+import { useGlobalState, useImageStore, useAppStore, useQuipuxStore } from "~~/services/store/store";
 import type { ApiResponses } from "~~/types/appTypes";
 import { stringToHex } from "~~/utils/nerdUtils";
 
@@ -48,12 +48,12 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
     onToggleMinimize,
     setEngaged, // Destructure the onToggleMinimize prop
 }) => {
-    const tokenIds = useGlobalState(state => state.tokenIds);
+    const tevents = useAppStore(state => state.transferEvents);
     const [mouseTrigger, setMouseTrigger] = useState<boolean>(false);
 
     const scannerOptions = ["abilities", "currentEquipmentAndVehicle", "funFact", "powerLevel", "currentMissionBrief"];
     const parsedMetadata = useGlobalState(state => state.apiResponses);
-    const scannerOutput = useGlobalState(state => state.metaScanData);
+    const scannerOutput = useQuipuxStore(state => state.metaScanData);
 
     const imageState = useImageStore(state => ({
         srcUrl: state.srcUrl,
@@ -194,7 +194,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
                     <div
                         onMouseEnter={() => setEngaged(true)}
                         onMouseLeave={() => setEngaged(false)}
-                        className="spaceship-display-screen"
+                        className="spaceship-display-screen z-[500000000000000000000]"
                     >
                         <div className="screen-border h-full text-black bg-black">
                             {selectedTokenId && travelStatus == "NoTarget" ? (
@@ -237,9 +237,9 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
                             >
                                 <option>ID</option>
 
-                                {tokenIds.map(tokenId => (
+                                {tevents && Object.entries(tevents).map(([key, value], tokenId) => (
                                     <option
-                                        key={tokenId}
+                                        key={key}
                                         className="dropdown-option hex-prompt 
                                         dropdown-option  content-center"
                                     >
@@ -275,7 +275,7 @@ export const ReadAIU: FunctionComponent<ReadAIUProps> = ({
                 scannerOptions={scannerOptions}
             />
 
-            <div className={`spaceship-display-screen token-selection-panel${selectedTokenId == "" ? "" : "-focused"}`}>
+            <div className={`spaceship-display-screen token-selection-panel${selectedTokenId == "" ? "-focused" : "-focused"}`}>
                 <div className="text-black relative opacity-100 h-full w-full overflow-hidden">
                     <MetadataDisplay
                         imageState={imageState}

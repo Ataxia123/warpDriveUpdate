@@ -21,7 +21,6 @@ const Background: React.FC<BackgroundProps> = ({
     scanning,
     loadingProgress,
 }) => {
-    const [bgPosition, setBgPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [warpSpeedOpacity, setWarpSpeedOpacity] = useState("0");
     const [lightSpeed, setLightSpeed] = useState(false);
     const [showDynamicImage, setShowDynamicImage] = useState(true);
@@ -29,6 +28,8 @@ const Background: React.FC<BackgroundProps> = ({
     const warpImage1 = React.useRef<HTMLDivElement>(null);
     const warpImage2 = React.useRef<HTMLDivElement>(null);
     const imageStore = useImageStore();
+
+    const [bgPosition, setBgPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const handleMouseMove = (e: MouseEvent) => {
         const { clientX, clientY } = e;
         setBgPosition({ x: clientX / 50, y: clientY / 50 });
@@ -68,7 +69,7 @@ const Background: React.FC<BackgroundProps> = ({
                 src={imageStore.backgroundImageUrl || "assets/background.png"}
                 alt="Dynamic Image"
                 style={{
-                    transform: `translate(${bgPosition.x}px, ${bgPosition.y}px)`,
+                    transform: `translate(${-bgPosition.x}px, ${-bgPosition.y}px)`,
                 }}
             />
             <SpaceParticles />

@@ -6,8 +6,8 @@ import { BanknotesIcon } from "@heroicons/react/24/outline";
 import IntergalacticReportDisplay from "~~/components/IntergalacticReportDisplay";
 import LogViewer from "~~/components/panels/LogViewer";
 import { useAppStore, useGlobalState, useImageStore } from "~~/services/store/store";
-import type { ApiResponses, MetaScanData } from "~~/types/appTypes";
-
+import type { ApiResponses, HeroCodex } from "~~/types/appTypes";
+import { BotScreen } from "../BotScreen";
 export const Faucet = (props: {
     handleScanning: (scanning: boolean) => void;
     metadata: ApiResponses;
@@ -16,7 +16,7 @@ export const Faucet = (props: {
     travelStatus: string | undefined;
     playHolographicDisplay: () => void;
     setEngaged: (engaged: boolean) => void;
-    scannerOutput: MetaScanData;
+    scannerOutput: HeroCodex;
     scannerOptions: any;
 }) => {
     const {
@@ -67,7 +67,8 @@ export const Faucet = (props: {
                 return <IntergalacticReportDisplay playHolographicDisplay={playHolographicDisplay} />;
             case "SwitchBoard":
                 // Custom interface for meta scan data
-                return <SwitchBoard />;
+                //
+                return <BotScreen />;
             case "imageData":
                 // Custom interface for ship state
                 return <SwitchBoard />;
@@ -91,36 +92,38 @@ export const Faucet = (props: {
         <div className="z-10 fixed h-[12%] w-[10%] top-[60%] left-[45.2%]">
             <label
                 htmlFor="faucet-modal"
-                className="absolute spaceship-display-screen hex-prompt  text-center cursor-pointer hover:opacity-50 font-normal normal-case gap-1"
+                className="absolute spaceship-display-screen  text-center cursor-pointer hover:opacity-50 font-normal normal-case gap-1"
             >
-                <div className="relative text-lg text-white top-2 font-bold">N.A.V.I. Interface
-                    <br />
-                    <div className="relative hex-prompt text-xl"><br />id: {globalState.account?.displayName}</div></div>
+                <div className="relative top-2 text-left p-2 pl-3"><h1 className="font-bold spaceship-display-screen p-2">N.A.V.I. Interface</h1>
+                    <ul>
+                        <li>cmdr:{globalState.myPilots && globalState.myPilots[0]?.pilotData?.pilotName}</li>
+                        <li className="relative ">id: {appState.account?.displayName}
+                        </li>
+
+                        crd: <span className="text-white"> {globalState.myPilots && globalState.myPilots[0]?.pilotData?.credits}</span> µ</ul>
+                </div>
+
             </label>
             <input type="checkbox" id="faucet-modal" className="modal-toggle" onClick={() => handleScanning(true)} />
 
             <label
                 htmlFor="faucet-modal"
-                className="modal rounded-full cursor-pointer relative z-[20000000] -left-[177%] -top-[425%] h-[600%] w-[450%]"
+                className="modal rounded-full cursor-pointer relative z-[20000000] -left-[327%] -top-[525%] h-[600%] w-[750%]"
                 style={{ transform: "perspective(100px) rotateX(1deg)" }}
             >
-                <label
-                    htmlFor="faucet-modal"
-                    className="screen border btn btn-ghost btn-sm btn-circle absolute z-5 right-3 top-3"
-                >
-                    {" "}
-                    ✕
-                </label>
-
-                <label className="modal-box h-[75%] w-[100%] overflow-hidden">
+                <label className="modal-box -ml-64 h-[75%] w-[200%] overflow-visible">
                     {/* dummy input to capture event onclick on modal box */}
-                    <input className="h-0 w-0 absolute top-0 left-0 spaceship-display-screen" />
+                    <input className="h-0 w-0 absolute top-0 left-0 spaceship-display-screen"
+                        style={{ width: "100%", height: "100%" }}
+                    />
 
-                    <div className="flex flex-col absolute spaceship-display-screen space-x-4 screen-border">
-                        <span className="relative text-2xl top-5 font-bold">N.A.V.I. Interface</span>
-                        <img className="absolute  opacity-60 -z-10 h-[10%] w-[10%] top-3 left-[43%]" src="/aiu.png" />
+                    <div className="flex flex-col absolute spaceship-display-screen -ml-32 space-x-4 screen-border"
+                        style={{ width: "200%", height: "100%" }}
+                    >
+                        <span className="relative text-2xl top-5 font-bold text-center ml-6">N.A.V.I. Interface</span>
+                        <img className="absolute  opacity-30 -z-10 h-[20%] w-[20%]top-3 left-[42%]" src="/aiu.png" />
 
-                        <div className="flex flex-row items-center justify-between w-full p-5 text-sm pl-6 cursor-pointer">
+                        <div className="flex flex-row items-center justify-between w-full p-5 text-lg pl-6 cursor-pointer">
                             <span
                                 onClick={() => {
                                     playHolographicDisplay();

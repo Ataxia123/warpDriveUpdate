@@ -1,12 +1,24 @@
 import type { ApiResponses } from "../types/appTypes";
 
 export function stringToHex(str: string): string {
-  let hex = "ALLIANCEOFTHEINFINITEUNIVERSE";
-  for (let i = 0; i < str?.length; i++) {
-    hex += str.charCodeAt(i).toString(16);
-  }
-  return hex;
+    let hex = "ALLIANCEOFTHEINFINITEUNIVERSE";
+    for (let i = 0; i < str?.length; i++) {
+        hex += str.charCodeAt(i).toString(16);
+    }
+    return hex;
 }
+
+export const getColor = (travelStatus: any) => {
+    switch (travelStatus) {
+        case "NoTarget":
+            return "rgb(42, 252, 221, 0.25)";
+        case "AcquiringTarget":
+            return "rgb(242, 152, 47 , 0.41)";
+        case "TargetAcquired":
+            return "rgb(132,222,2, 0.51)";
+        default: ""
+    }
+};
 /*
       function stringifyMetadata(): string {
           const { Level, Power1, Power2, Power3, Power4, Alignment1, Alignment2, Side } =
@@ -25,17 +37,17 @@ export function stringToHex(str: string): string {
    }
 */
 export async function handleReallySendTweet(selectedLog: string, selectedImage: string) {
-  // Host the collage image on your server or a third-party service and get its URL
+    // Host the collage image on your server or a third-party service and get its URL
 
-  const tweetText = `🔭 Discovering the Cosmos with AI-U 🌌
+    const tweetText = `🔭 Discovering the Cosmos with AI-U 🌌
     #AIU_SIGNAL 
     ${selectedLog} ${selectedImage}
     🚀 Join the adventure: https://xn--0civ138ml7ayzbx3f.y.at
     # #SpaceExploration`;
 
-  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
-  window.open(tweetUrl, "_blank");
+    window.open(tweetUrl, "_blank");
 }
 /*
 export async function createWebcomic(
@@ -185,42 +197,42 @@ export async function createWebcomic(
 */
 
 export const generatePrompt = (type: "character" | "background", metadata: ApiResponses): string => {
-  const APP_URL = "";
-  const niji = metadata.midjourneyConfig?.nijiFlag ? "--niji 5" : "";
-  const v = metadata.midjourneyConfig?.vFlag ? "--v 5" : "";
-  const keyword = type === "background" ? "The Planet Of" : "A portrait of";
-  const {
-    Level: level,
-    Power1: power1,
-    Power2: power2,
-    Power3: power3,
-    Power4: power4,
-    Alignment1: alignment1,
-    Alignment2: alignment2,
-    Side: side,
-  } = metadata.nftData || {};
-  const { currentEquipmentAndVehicle, currentMissionBrief, abilities, powerLevel, funFact, biometricReading } =
-    metadata.metaScanData || {};
-  const { url: srcUrl, selectedDescription } = metadata.midjourneyConfig || {};
-  const { locationCoordinates, Scan } = metadata.planetData || {};
-  const randomPlanet =
-    "https://discovery.sndimg.com/content/dam/images/discovery/fullset/2022/9/alien%20planet%20GettyImages-913058614.jpg.rend.hgtvcom.406.406.suffix/1664497398007.jpeg";
-  let result;
-  if (type === "background")
-    result = `${randomPlanet} ${keyword} 
+    const APP_URL = "";
+    const niji = metadata.midjourneyConfig?.nijiFlag ? "--niji 5" : "";
+    const v = metadata.midjourneyConfig?.vFlag ? "--v 5" : "";
+    const keyword = type === "background" ? "The Planet Of" : "A portrait of";
+    const {
+        Level: level,
+        Power1: power1,
+        Power2: power2,
+        Power3: power3,
+        Power4: power4,
+        Alignment1: alignment1,
+        Alignment2: alignment2,
+        Side: side,
+    } = metadata.nftData || {};
+    const { currentEquipmentAndVehicle, currentMissionBrief, abilities, powerLevel, funFact, biometricReading } =
+        metadata.metaScanData || {};
+    const { url: srcUrl, selectedDescription } = metadata.midjourneyConfig || {};
+    const { locationCoordinates, Scan } = metadata.planetData || {};
+    const randomPlanet =
+        "https://discovery.sndimg.com/content/dam/images/discovery/fullset/2022/9/alien%20planet%20GettyImages-913058614.jpg.rend.hgtvcom.406.406.suffix/1664497398007.jpeg";
+    let result;
+    if (type === "background")
+        result = `${randomPlanet} ${keyword} 
                     ${JSON.stringify(Scan)} ${JSON.stringify(locationCoordinates)}
                     ${niji} ${v} viewed from space`.trim();
 
-  result = `${srcUrl} ${keyword}  ${level} ${power1} 
+    result = `${srcUrl} ${keyword}  ${level} ${power1} 
                 ${power2} ${power3} ${power4} ${currentMissionBrief} 
                 Power Level: ${powerLevel}${biometricReading?.health} 
                 ${currentEquipmentAndVehicle} ${abilities} ${funFact} 
                 ${alignment1} ${alignment2} ${side} ${selectedDescription} 
                 ${niji} ${v}`;
 
-  result = result.replace(/undefined/g, "");
-  // Truncate if length exceeds 14,000 characters
+    result = result.replace(/undefined/g, "");
+    // Truncate if length exceeds 14,000 characters
 
-  return result;
+    return result;
 };
 // Initial cleanup to remove 'undefined'

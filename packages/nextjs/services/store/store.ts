@@ -9,7 +9,7 @@ import type {
     QuestData,
     Manifest,
     Item,
-    MetaScanData,
+    HeroCodex,
     MidjourneyConfig,
     NftData,
     PilotState,
@@ -34,6 +34,8 @@ export type ImageStoreState = {
     setDisplayImageUrl: (displayImageUrl: string) => void;
     srcUrl: string;
     setSrcUrl: (srcUrl: string) => void;
+    targetUrl: string;
+    setTargetUrl: (targetUrl: string) => void;
 
     resetImages: () => void;
 };
@@ -41,6 +43,8 @@ export type ImageStoreState = {
 export const useImageStore = create<ImageStoreState>(set => ({
     imageUrl: "/aiu.png",
     setImageUrl: (imageUrl: string) => set({ imageUrl }),
+    targetUrl: "/aiu.png",
+    setTargetUrl: (targetUrl: string) => set({ targetUrl }),
     backgroundImageUrl: "assets/background.png",
     setBackgroundImageUrl: (backgroundImageUrl: string) => set({ backgroundImageUrl }),
     displayImageUrl: "./aiu.png",
@@ -73,14 +77,14 @@ export type QuipuxStore = {
     encounterResults: EncounterResultData[];
     quipux: Quipux
     setQuipux: (quipux: Quipux) => void;
-    database: AIUDatabase;
+    database: any;
     setDatabase: (newDatabase: AIUDatabase) => void;
     encounterData: EncounterData;
     setEncounterData: (encounterData: EncounterData) => void;
     manifest: Manifest;
     setManifest: (manifest: Manifest) => void;
-    metaScanData: MetaScanData;
-    setMetaScanData: (metaScanData: MetaScanData) => void;
+    metaScanData: HeroCodex;
+    setMetaScanData: (metaScanData: HeroCodex) => void;
     aiuBroadcast: AIUBroadcast;
     setAiuBroadcast: (aiuBroadcast: AIUBroadcast) => void;
 };
@@ -89,8 +93,8 @@ export const useQuipuxStore = create<QuipuxStore>(set => ({
     aiuBroadcast: {} as AIUBroadcast,
     setAiuBroadcast: (aiuBroadcast: AIUBroadcast) => set(() => ({ aiuBroadcast: aiuBroadcast })),
     manifest: {} as Manifest,
-    metaScanData: {} as MetaScanData,
-    setMetaScanData: (metaScanData: MetaScanData) => set(() => ({ metaScanData: metaScanData })),
+    metaScanData: {} as HeroCodex,
+    setMetaScanData: (metaScanData: HeroCodex) => set(() => ({ metaScanData: metaScanData })),
     setManifest: (manifest: Manifest) => set(() => ({ manifest: manifest })),
     credentials: { account: {} as any, provider: {} as any, signer: {} as any },
     setCredentials: (credentials: any) => set({ credentials }),
@@ -105,7 +109,7 @@ export const useQuipuxStore = create<QuipuxStore>(set => ({
     shipData: {} as ShipState,
     setShipData: (shipData: ShipState) => set(() => ({ shipData: shipData })),
     database: {} as AIUDatabase,
-    setDatabase: (newDatabase: AIUDatabase) => set(() => ({ database: newDatabase })),
+    setDatabase: (newDatabase: any) => set(() => ({ database: newDatabase })),
     quipuxId: "",
     pilotData: {} as PilotState,
     setPilotData: (pilotData: PilotState) => set(() => ({ pilotData: pilotData })),
@@ -226,7 +230,7 @@ export const useAppStore = create<AppState>(set => ({
     travelStatus: "NoTarget",
     setTravelStatus: (travelStatus: "NoTarget" | "AcquiringTarget" | "TargetAcquired" | undefined) =>
         set({ travelStatus }),
-    prevTravelStatus: "",
+    prevTravelStatus: "AcquiringTarget",
     setPrevTravelStatus: (prevTravelStatus: string) => set({ prevTravelStatus }),
 
     warping: false,
@@ -240,6 +244,8 @@ export const useAppStore = create<AppState>(set => ({
 
 
 export type GlobalState = {
+    targetText: string;
+    setTargetText: (targetText: string) => void;
     description: string[];
     setDescription: (description: string[]) => void;
     selectedDescriptionIndex: number;
@@ -276,8 +282,18 @@ export type GlobalState = {
     setApiResponses: (response: Partial<ApiResponses>) => void;
     setEngaged: (engaged: boolean) => void;
     engaged: boolean;
+    myPilots: any;
+    setMyPilots: (myPilots: any) => void;
+    myData: any;
+    setMyData: (myData: any) => void;
 };
 export const useGlobalState = create<GlobalState>(set => ({
+    myData: {},
+    setMyData: (myData: any) => set({ myData }),
+    targetText: "",
+    setTargetText: (targetText: string) => set({ targetText }),
+    myPilots: {},
+    setMyPilots: (myPilots: any) => set({ myPilots: myPilots }),
     originatingMessageId: "",
     setOriginatingMessageId: (originatingMessageId: string) => set({ originatingMessageId }),
     selectedDescription: "",

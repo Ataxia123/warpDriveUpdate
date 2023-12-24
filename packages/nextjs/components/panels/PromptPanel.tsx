@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Switchboard from "./Switchboard";
 import type { ApiResponses } from "~~/types/appTypes";
 import { generatePrompt } from "~~/utils/nerdUtils";
+import { useAppStore, useGlobalState, useImageStore, useQuipuxStore } from "~~/services/store/store";
 
 interface PromptPanelProps {
     playHolographicDisplay: () => void;
@@ -57,7 +58,7 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
     ];
     const [isFocused, setIsFocused] = useState(false);
     const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
-
+    const imageStore = useImageStore();
     function handleModifiedPrompt(modifiedPrompt: string) {
         //Do something with the modifiedPrompt, e.g., update the state or perform other actions
         setModifiedPrompt(modifiedPrompt);
@@ -85,7 +86,7 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
                         <h1 className="description-text">
                             <p className="font-bold text-2xl">
 
-                                SYNTHOGRAPHIC VIEWFINDER
+                                VIEWFINDER<br />
                                 {metadata.nftData.Level} {metadata.nftData.Power1} {metadata.nftData.Power2} {metadata.nftData.Power3}
                                 {metadata.nftData.Power4}{" "}
                             </p>
@@ -99,10 +100,10 @@ export const PromptPanel: React.FC<PromptPanelProps> = ({
                                 }}
                                 className="spaceship-display-screen"
                             >
-                                {imageUrl ? (
-                                    <img src={imageUrl} className="screen-border image-display " alt="/aiu.png" />
+                                {imageStore.backgroundImageUrl ? (
+                                    <img src={imageStore.displayImageUrl} className="screen-border image-display " alt="/aiu.png" />
                                 ) : (
-                                    <img src={srcUrl} className="image-display screen-border" alt="/aiu.png" />
+                                    <img src={imageStore.imageUrl} className="image-display screen-border" alt="/aiu.png" />
                                 )}
                             </div>
                         )}

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import ReadAIU from "../ReadAIU";
-import type { MetaScanData } from "~~/types/appTypes"
+import type { HeroCodex } from "~~/types/appTypes"
 
 interface TokenSelectionPanelProps {
     warping: boolean;
-    scannerOutput: MetaScanData;
+    scannerOutput: HeroCodex;
     playSpaceshipOn: () => void;
     handleScanning: (scanning: boolean) => void;
     scanning: boolean;
